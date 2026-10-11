@@ -1,0 +1,1294 @@
+/* ==========================================================================
+   Telegram Mini App: Service Cost Calculator
+   High-Fidelity Telegram Theme, Safe Area, and Responsive Stylesheet
+   ========================================================================== */
+
+:root {
+  /* Default Light Theme (Fallback if Telegram theme variables not set) */
+  --tg-theme-bg-color: #ffffff;
+  --tg-theme-secondary-bg-color: #f3f4f6;
+  --tg-theme-text-color: #111827;
+  --tg-theme-hint-color: #6b7280;
+  --tg-theme-link-color: #2481cc;
+  --tg-theme-button-color: #2481cc;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-header-bg-color: #ffffff;
+  --tg-theme-section-bg-color: #ffffff;
+  --tg-theme-section-separator-color: #e5e7eb;
+  --tg-theme-accent-color: #2481cc;
+  --tg-theme-destructive-text-color: #ef4444;
+
+  /* App Accents */
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-danger: #ef4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+  --color-warning: #f59e0b;
+  --color-badge-bg: rgba(36, 129, 204, 0.1);
+  --color-card-border: rgba(0, 0, 0, 0.08);
+  --color-card-hover: rgba(36, 129, 204, 0.04);
+  --color-shadow: rgba(0, 0, 0, 0.04);
+
+  /* Safe Area Variables with env fallbacks */
+  --safe-top: var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --safe-bottom: var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --safe-left: var(--tg-safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --safe-right: var(--tg-safe-area-inset-right, env(safe-area-inset-right, 0px));
+
+  /* Layout */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Theme overrides when data-theme="dark" or via Telegram params */
+[data-theme="dark"] {
+  --tg-theme-bg-color: #17212b;
+  --tg-theme-secondary-bg-color: #0e1621;
+  --tg-theme-text-color: #f5f5f5;
+  --tg-theme-hint-color: #8a96a3;
+  --tg-theme-link-color: #5288c1;
+  --tg-theme-button-color: #5288c1;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-header-bg-color: #17212b;
+  --tg-theme-section-bg-color: #1c2733;
+  --tg-theme-section-separator-color: #242f3d;
+  --tg-theme-accent-color: #5288c1;
+  --tg-theme-destructive-text-color: #f87171;
+
+  --color-card-border: rgba(255, 255, 255, 0.08);
+  --color-card-hover: rgba(82, 136, 193, 0.08);
+  --color-shadow: rgba(0, 0, 0, 0.25);
+  --color-badge-bg: rgba(82, 136, 193, 0.16);
+  --color-success-bg: rgba(16, 185, 129, 0.2);
+  --color-danger-bg: rgba(239, 68, 68, 0.2);
+}
+
+/* Base Reset & Typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+  line-height: 1.45;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* App Container Centering for Desktop / Native Fullscreen for Mobile */
+.app-container {
+  max-width: 580px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--tg-theme-secondary-bg-color);
+  position: relative;
+  box-shadow: 0 0 40px var(--color-shadow);
+}
+
+/* ==========================================================================
+   Header & Navigation
+   ========================================================================== */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--tg-theme-header-bg-color);
+  border-bottom: 1px solid var(--tg-theme-section-separator-color);
+  padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 16px) 12px calc(var(--safe-left) + 16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--tg-theme-link-color);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-sm);
+  transition: opacity var(--transition-fast);
+}
+
+.nav-back-btn:active {
+  opacity: 0.65;
+}
+
+.header-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-main-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+  letter-spacing: -0.02em;
+}
+
+.header-sub-title {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+  font-weight: 400;
+}
+
+.theme-toggle-btn {
+  background: var(--tg-theme-secondary-bg-color);
+  border: 1px solid var(--color-card-border);
+  color: var(--tg-theme-text-color);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   Main Content & Screens
+   ========================================================================== */
+.main-content {
+  flex: 1;
+  padding: 16px calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 96px) calc(var(--safe-left) + 16px);
+}
+
+.screen-view {
+  display: none;
+  animation: fadeIn 0.22s ease-out;
+}
+
+.screen-view.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Intro Card
+   ========================================================================== */
+.intro-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: var(--tg-theme-section-bg-color);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.intro-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.intro-text strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  margin-bottom: 2px;
+}
+
+.intro-text p {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Section Headers
+   ========================================================================== */
+.section-group {
+  margin-bottom: 22px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.section-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.section-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: var(--color-badge-bg);
+  color: var(--tg-theme-link-color);
+}
+
+.fixed-badge {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.percent-badge {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+/* ==========================================================================
+   Services Grid & Cards (Screen 1)
+   ========================================================================== */
+.services-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.service-card {
+  background-color: var(--tg-theme-section-bg-color);
+  border: 2px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.service-card:hover {
+  background-color: var(--color-card-hover);
+}
+
+.service-card.selected {
+  border-color: var(--tg-theme-button-color);
+  background-color: var(--color-card-hover);
+  box-shadow: 0 4px 14px var(--color-shadow);
+}
+
+.service-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.service-icon-wrap {
+  font-size: 28px;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background-color: var(--tg-theme-secondary-bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.service-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.service-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.service-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+}
+
+.service-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background-color: var(--color-badge-bg);
+  color: var(--tg-theme-link-color);
+}
+
+.service-meta {
+  margin-top: 2px;
+}
+
+.service-period {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+}
+
+/* Radio Indicator */
+.service-radio {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--tg-theme-hint-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.service-radio.checked {
+  border-color: var(--tg-theme-button-color);
+  background-color: var(--tg-theme-button-color);
+}
+
+.radio-inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  transform: scale(0);
+  transition: transform var(--transition-fast);
+}
+
+.service-radio.checked .radio-inner {
+  transform: scale(1);
+}
+
+.service-desc {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.service-price-tag {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px dashed var(--tg-theme-section-separator-color);
+}
+
+.service-price-tag .price-label {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+}
+
+.service-price-tag .price-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--tg-theme-text-color);
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   Options List & Cards (Fixed + Percentage)
+   ========================================================================== */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--tg-theme-section-bg-color);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.option-card:hover {
+  background-color: var(--color-card-hover);
+}
+
+.option-card.active {
+  border-color: rgba(36, 129, 204, 0.4);
+  background-color: var(--color-card-hover);
+}
+
+.option-icon-box {
+  font-size: 22px;
+  line-height: 1;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background-color: var(--tg-theme-secondary-bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.option-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.option-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  line-height: 1.3;
+}
+
+.option-desc {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.option-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.option-price-chip {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+  background-color: var(--tg-theme-secondary-bg-color);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.percent-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  background: transparent;
+  padding: 0;
+}
+
+.pct-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #d97706;
+  background-color: rgba(245, 158, 11, 0.14);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.pct-rub {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tg-theme-hint-color);
+}
+
+/* Custom iOS/Telegram Style Switch */
+.custom-switch {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background-color: var(--tg-theme-section-separator-color);
+  padding: 2px;
+  transition: background-color var(--transition-fast);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.switch-slider {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform var(--transition-fast);
+}
+
+.custom-switch.active {
+  background-color: var(--tg-theme-button-color);
+}
+
+.custom-switch.active .switch-slider {
+  transform: translateX(18px);
+}
+
+/* ==========================================================================
+   Promo Code Box
+   ========================================================================== */
+.promo-box {
+  background-color: var(--tg-theme-section-bg-color);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.promo-hint-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.promo-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.promo-input-wrap {
+  flex: 1;
+}
+
+.promo-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--tg-theme-section-separator-color);
+  border-radius: var(--radius-md);
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.promo-input::placeholder {
+  text-transform: none;
+  color: var(--tg-theme-hint-color);
+  font-weight: 400;
+}
+
+.promo-input:focus {
+  border-color: var(--tg-theme-button-color);
+}
+
+.promo-btn {
+  height: 42px;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.promo-message {
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 8px;
+  min-height: 16px;
+}
+
+.promo-message.error {
+  color: var(--color-danger);
+}
+
+.promo-message.success {
+  color: var(--color-success);
+}
+
+.applied-promo-badge {
+  margin-top: 12px;
+  background-color: var(--color-success-bg);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.applied-promo-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.applied-promo-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #065f46;
+}
+
+[data-theme="dark"] .applied-promo-text {
+  color: #34d399;
+}
+
+.remove-promo-btn {
+  background: transparent;
+  border: none;
+  color: var(--tg-theme-hint-color);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.remove-promo-btn:hover {
+  color: var(--color-danger);
+}
+
+/* ==========================================================================
+   Summary Card (Screen 1)
+   ========================================================================== */
+.summary-card {
+  background-color: var(--tg-theme-section-bg-color);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.sum-label {
+  color: var(--tg-theme-hint-color);
+}
+
+.sum-value {
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+}
+
+.extra-val {
+  color: var(--tg-theme-text-color);
+}
+
+.discount-val {
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.summary-divider {
+  height: 1px;
+  background-color: var(--tg-theme-section-separator-color);
+  margin: 12px 0;
+}
+
+.summary-total-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.total-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+}
+
+.total-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--tg-theme-link-color);
+  letter-spacing: -0.02em;
+}
+
+.inline-action-wrap {
+  margin-top: 10px;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition-fast);
+  outline: none;
+  text-decoration: none;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-block {
+  width: 100%;
+  height: 48px;
+}
+
+.btn-primary {
+  background-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.06);
+}
+
+.btn-secondary {
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+  border: 1px solid var(--tg-theme-section-separator-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-card-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--tg-theme-hint-color);
+  border: 1px dashed var(--tg-theme-section-separator-color);
+}
+
+.btn-ghost:hover {
+  color: var(--tg-theme-text-color);
+}
+
+/* ==========================================================================
+   Screen 2: Review & Verification Screen
+   ========================================================================== */
+.screen-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.screen-heading-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.screen-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--tg-theme-text-color);
+  letter-spacing: -0.02em;
+}
+
+.screen-subtitle {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  margin-top: 2px;
+}
+
+.review-receipt-wrapper {
+  margin-bottom: 20px;
+}
+
+.receipt-card {
+  background-color: var(--tg-theme-section-bg-color);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: 0 4px 20px var(--color-shadow);
+}
+
+.receipt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--tg-theme-section-separator-color);
+  margin-bottom: 14px;
+}
+
+.receipt-badge {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tg-theme-button-color);
+}
+
+.receipt-date {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+}
+
+.receipt-section {
+  margin-bottom: 16px;
+}
+
+.receipt-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tg-theme-hint-color);
+  margin-bottom: 8px;
+}
+
+.receipt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.main-service-row {
+  padding: 8px 10px;
+  background-color: var(--tg-theme-secondary-bg-color);
+  border-radius: var(--radius-md);
+}
+
+.service-receipt-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.receipt-main-name {
+  font-size: 14px;
+  color: var(--tg-theme-text-color);
+}
+
+.receipt-sub {
+  font-size: 11px;
+  color: var(--tg-theme-hint-color);
+}
+
+.opt-item {
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--tg-theme-section-separator-color);
+}
+
+.receipt-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tg-theme-text-color);
+  font-size: 13px;
+}
+
+.receipt-icon {
+  font-size: 16px;
+}
+
+.receipt-val {
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  font-size: 13px;
+}
+
+.no-extras {
+  padding: 8px 0;
+}
+
+.receipt-hint {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--tg-theme-hint-color);
+}
+
+.summary-calc-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px solid var(--tg-theme-section-separator-color);
+}
+
+.subtotal-row {
+  color: var(--tg-theme-hint-color);
+  font-size: 13px;
+}
+
+.discount-row {
+  background-color: var(--color-success-bg);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  margin: 6px 0;
+}
+
+.promo-applied-label {
+  color: #065f46;
+  font-size: 13px;
+}
+
+[data-theme="dark"] .promo-applied-label {
+  color: #34d399;
+}
+
+.receipt-divider {
+  height: 1px;
+  background-color: var(--tg-theme-section-separator-color);
+  margin: 10px 0;
+}
+
+.total-row {
+  margin-top: 6px;
+}
+
+.receipt-total-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+}
+
+.receipt-total-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--tg-theme-button-color);
+  letter-spacing: -0.02em;
+}
+
+/* Contact Form */
+.contact-form-card {
+  background-color: var(--tg-theme-section-bg-color);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.form-field {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  margin-bottom: 6px;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--tg-theme-section-separator-color);
+  border-radius: var(--radius-md);
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--tg-theme-button-color);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.review-actions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   Screen 3: Success Confirmation Screen
+   ========================================================================== */
+.success-card {
+  background-color: var(--tg-theme-section-bg-color);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-xl);
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px var(--color-shadow);
+}
+
+.success-icon-animated {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+}
+
+.checkmark-svg {
+  width: 72px;
+  height: 72px;
+  display: block;
+}
+
+.checkmark-circle {
+  stroke: var(--color-success);
+  stroke-width: 3;
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+  stroke: var(--color-success);
+  stroke-width: 4;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: strokeCheck 0.35s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+}
+
+@keyframes strokeCircle {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes strokeCheck {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.success-badge-pill {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  margin-bottom: 8px;
+}
+
+.success-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--tg-theme-text-color);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.success-subtitle {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+}
+
+.order-id-badge {
+  display: inline-block;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--tg-theme-button-color);
+  background-color: var(--tg-theme-secondary-bg-color);
+  padding: 6px 16px;
+  border-radius: var(--radius-md);
+  margin: 10px 0 20px;
+  border: 1px dashed var(--tg-theme-button-color);
+}
+
+.success-summary-box {
+  background-color: var(--tg-theme-secondary-bg-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.success-receipt-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.success-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.s-label {
+  color: var(--tg-theme-hint-color);
+  flex-shrink: 0;
+}
+
+.s-val {
+  color: var(--tg-theme-text-color);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
+
+.promo-highlight .s-val {
+  color: var(--color-success);
+}
+
+.success-divider {
+  height: 1px;
+  background-color: var(--tg-theme-section-separator-color);
+  margin: 6px 0;
+}
+
+.total-highlight {
+  align-items: baseline;
+}
+
+.total-highlight .s-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+}
+
+.s-val-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--tg-theme-button-color);
+}
+
+.success-info-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: rgba(36, 129, 204, 0.08);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  text-align: left;
+  margin-bottom: 22px;
+}
+
+.notice-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.success-info-notice p {
+  font-size: 12px;
+  color: var(--tg-theme-text-color);
+  line-height: 1.4;
+}
+
+.success-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   Browser Fallback Main Button Bottom Bar
+   (Matches Telegram native MainButton aesthetic)
+   ========================================================================== */
+.browser-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: var(--tg-theme-header-bg-color);
+  border-top: 1px solid var(--tg-theme-section-separator-color);
+  padding: 12px calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 12px) calc(var(--safe-left) + 16px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.browser-bottom-container {
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.browser-main-button {
+  width: 100%;
+  height: 50px;
+  background-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(36, 129, 204, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.browser-main-button:hover {
+  filter: brightness(1.06);
+}
+
+.browser-main-button:active {
+  transform: scale(0.98);
+}
+
+.browser-main-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}

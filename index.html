@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2481cc">
+  <meta name="description" content="Telegram Mini App Калькулятор стоимости услуги с расчётом опций, наценок и промокодом">
+  <title>Калькулятор стоимости услуги</title>
+
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Bar / App Navigation Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="pageBackBtn" class="nav-back-btn" aria-label="Вернуться назад" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>Назад</span>
+        </button>
+        <div class="header-titles">
+          <h1 class="header-main-title">Калькулятор услуг</h1>
+          <span class="header-sub-title">Онлайн-расчёт стоимости</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Переключить тему оформления" aria-label="Переключить тему">
+          🌙
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN SCREENS CONTAINER -->
+    <main class="main-content">
+
+      <!-- ============================================== -->
+      <!-- SCREEN 1: CALCULATOR & CONFIGURATOR            -->
+      <!-- ============================================== -->
+      <section id="screenCalc" class="screen-view active">
+        <!-- Intro Banner -->
+        <div class="intro-card">
+          <div class="intro-icon">💡</div>
+          <div class="intro-text">
+            <strong>Сконфигурируйте ваш проект</strong>
+            <p>Выберите одну из трёх услуг, отметьте нужные опции и укажите промокод для мгновенной скидки.</p>
+          </div>
+        </div>
+
+        <!-- 1. Base Services Section -->
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-number">1</span>
+            <h2 class="section-title">Выберите услугу</h2>
+            <span class="section-badge">Обязательно</span>
+          </div>
+          <div id="servicesList" class="services-grid" role="radiogroup" aria-label="Выбор услуги">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 2. Fixed Options Section -->
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-number">2</span>
+            <h2 class="section-title">Дополнительные опции</h2>
+            <span class="section-badge fixed-badge">Фикс. цена</span>
+          </div>
+          <p class="section-desc">Добавьте нужные модули и интеграции с фиксированной стоимостью:</p>
+          <div id="fixedOptionsList" class="options-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 3. Percentage Markups Section -->
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-number">3</span>
+            <h2 class="section-title">Специальные условия</h2>
+            <span class="section-badge percent-badge">Наценка %</span>
+          </div>
+          <p class="section-desc">Опции с процентной надбавкой (рассчитываются от базовой стоимости услуги):</p>
+          <div id="percentageOptionsList" class="options-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 4. Promo Code Section -->
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-number">4</span>
+            <h2 class="section-title">Промокод на скидку</h2>
+            <span class="promo-hint-tag">START10</span>
+          </div>
+          <div class="promo-box">
+            <div class="promo-input-row">
+              <div class="promo-input-wrap">
+                <input
+                  type="text"
+                  id="promoInput"
+                  class="promo-input"
+                  placeholder="Введите промокод (например, START10)"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
+                >
+              </div>
+              <button id="applyPromoBtn" class="btn btn-secondary promo-btn" type="button">
+                Применить
+              </button>
+            </div>
+            <div id="promoMessage" class="promo-message"></div>
+
+            <div id="appliedPromoBadge" class="applied-promo-badge" style="display: none;">
+              <div class="applied-promo-info">
+                <span class="gift-icon">🎉</span>
+                <span id="appliedPromoText" class="applied-promo-text"></span>
+              </div>
+              <button id="removePromoBtn" class="remove-promo-btn" title="Удалить промокод" aria-label="Удалить промокод">
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Dynamic Summary Breakdown -->
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-number">5</span>
+            <h2 class="section-title">Предварительный расчёт</h2>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-line">
+              <span class="sum-label">Базовая услуга (<span id="sumBaseService">—</span>):</span>
+              <span id="sumBasePrice" class="sum-value">0 ₽</span>
+            </div>
+            <div id="sumFixedRow" class="summary-line" style="display: none;">
+              <span class="sum-label">Фиксированные опции:</span>
+              <span id="sumFixedPrice" class="sum-value extra-val">+0 ₽</span>
+            </div>
+            <div id="sumPercentRow" class="summary-line" style="display: none;">
+              <span class="sum-label">Процентные надбавки:</span>
+              <span id="sumPercentPrice" class="sum-value extra-val">+0 ₽</span>
+            </div>
+            <div id="sumPromoRow" class="summary-line promo-line" style="display: none;">
+              <span class="sum-label">Скидка по промокоду:</span>
+              <span id="sumPromoDiscount" class="sum-value discount-val">-0 ₽</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-total-line">
+              <span class="total-label">Итого к оплате:</span>
+              <span id="sumTotalPrice" class="total-value">0 ₽</span>
+            </div>
+          </div>
+
+          <div class="inline-action-wrap">
+            <button id="goToReviewBtn" class="btn btn-primary btn-block">
+              Проверить параметры заказа →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 2: VERIFICATION & REVIEW SCREEN         -->
+      <!-- ============================================== -->
+      <section id="screenReview" class="screen-view">
+        <div class="screen-heading">
+          <div class="screen-heading-icon">📋</div>
+          <div>
+            <h2 class="screen-title">Проверка параметров</h2>
+            <p class="screen-subtitle">Проверьте состав заказа перед окончательным подтверждением</p>
+          </div>
+        </div>
+
+        <!-- Order Specification Receipt Container -->
+        <div id="reviewReceipt" class="review-receipt-wrapper">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+
+        <!-- Client Contact & Notes Card -->
+        <div class="section-group contact-form-card">
+          <div class="section-header">
+            <span class="section-number">👤</span>
+            <h3 class="section-title">Данные для связи</h3>
+          </div>
+          <p class="section-desc">Укажите контактную информацию, чтобы мы могли отправить коммерческое предложение:</p>
+
+          <div class="form-field">
+            <label for="clientNameInput" class="form-label">Ваше имя</label>
+            <input
+              type="text"
+              id="clientNameInput"
+              class="form-input"
+              placeholder="Как к вам обращаться?"
+            >
+          </div>
+
+          <div class="form-field">
+            <label for="clientContactInput" class="form-label">Telegram или телефон</label>
+            <input
+              type="text"
+              id="clientContactInput"
+              class="form-input"
+              placeholder="@username или +7 (999) 000-00-00"
+            >
+          </div>
+
+          <div class="form-field">
+            <label for="clientCommentInput" class="form-label">Комментарий / пожелания к проекту (необязательно)</label>
+            <textarea
+              id="clientCommentInput"
+              class="form-textarea"
+              rows="3"
+              placeholder="Например: нужен запуск к началу следующего месяца, есть готовый брендбук..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Review Screen Buttons -->
+        <div class="review-actions-wrap">
+          <button id="confirmOrderBtn" class="btn btn-primary btn-block">
+            Подтвердить заказ
+          </button>
+          <button id="editSelectionBtn" class="btn btn-ghost btn-block">
+            ← Изменить параметры расчёта
+          </button>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- SCREEN 3: SUCCESS CONFIRMATION SCREEN          -->
+      <!-- ============================================== -->
+      <section id="screenSuccess" class="screen-view">
+        <div class="success-card">
+          <div class="success-icon-animated">
+            <svg class="checkmark-svg" viewBox="0 0 52 52">
+              <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+              <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+          </div>
+
+          <span class="success-badge-pill">Заказ подтверждён</span>
+          <h2 class="success-title">Спасибо за заявку!</h2>
+          <p class="success-subtitle">Номер вашей заявки:</p>
+          <div id="successOrderId" class="order-id-badge">#TG-00000</div>
+
+          <!-- Dynamic Order Receipt -->
+          <div id="successSummaryContent" class="success-summary-box">
+            <!-- Rendered by app.js -->
+          </div>
+
+          <div class="success-info-notice">
+            <span class="notice-icon">💬</span>
+            <p>Мы зафиксировали расчёт и свяжемся с вами в течение 15 минут для уточнения технических деталей и старта работы.</p>
+          </div>
+
+          <div class="success-actions-list">
+            <button id="copyOrderBtn" class="btn btn-secondary btn-block">
+              📋 Скопировать детали заказа
+            </button>
+            <button id="newOrderBtn" class="btn btn-primary btn-block">
+              🔄 Рассчитать другой проект
+            </button>
+            <button id="closeAppBtn" class="btn btn-ghost btn-block">
+              ✕ Закрыть приложение
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Browser Floating MainButton Fallback Bar (When outside Telegram native MainButton) -->
+    <div id="browserBottomBar" class="browser-bottom-bar" style="display: none;">
+      <div class="browser-bottom-container">
+        <button id="browserMainBtn" class="browser-main-button" type="button">
+          Перейти к проверке
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/calculator.js"></script>
+  <script src="js/tg-adapter.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

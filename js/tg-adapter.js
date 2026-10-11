@@ -1,0 +1,301 @@
+/**
+ * Telegram WebApp Adapter
+ * Provides seamless integration with Telegram Mini App API and browser fallbacks.
+ */
+
+const TelegramAdapter = (() => {
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+  // Telegram environment detection:
+  // In real Telegram, initData is present or platform is not 'unknown' and parent != window or webapp headers exist
+  const isInsideTelegram = Boolean(
+    tg && (
+      (tg.initData && tg.initData.length > 0) ||
+      (tg.platform && tg.platform !== 'unknown')
+    )
+  );
+
+  let currentMainButtonClick = null;
+  let currentBackButtonClick = null;
+
+  /**
+   * Initialize WebApp environment
+   */
+  function init() {
+    if (tg) {
+      try {
+        tg.ready();
+        tg.expand();
+        if (typeof tg.enableClosingConfirmation === 'function') {
+          tg.enableClosingConfirmation();
+        }
+      } catch (e) {
+        console.warn('Telegram WebApp init warning:', e);
+      }
+
+      // Listen for Telegram events
+      tg.onEvent('themeChanged', handleThemeChange);
+      tg.onEvent('viewportChanged', handleViewportChange);
+    }
+
+    applyTheme();
+    handleViewportChange();
+  }
+
+  /**
+   * Apply Telegram theme or fallback browser theme
+   */
+  function applyTheme() {
+    const root = document.documentElement;
+
+    if (tg && tg.themeParams && Object.keys(tg.themeParams).length > 0) {
+      const p = tg.themeParams;
+      if (p.bg_color) root.style.setProperty('--tg-theme-bg-color', p.bg_color);
+      if (p.secondary_bg_color) root.style.setProperty('--tg-theme-secondary-bg-color', p.secondary_bg_color);
+      if (p.text_color) root.style.setProperty('--tg-theme-text-color', p.text_color);
+      if (p.hint_color) root.style.setProperty('--tg-theme-hint-color', p.hint_color);
+      if (p.link_color) root.style.setProperty('--tg-theme-link-color', p.link_color);
+      if (p.button_color) root.style.setProperty('--tg-theme-button-color', p.button_color);
+      if (p.button_text_color) root.style.setProperty('--tg-theme-button-text-color', p.button_text_color);
+      if (p.header_bg_color) root.style.setProperty('--tg-theme-header-bg-color', p.header_bg_color);
+      if (p.section_bg_color) root.style.setProperty('--tg-theme-section-bg-color', p.section_bg_color);
+      if (p.section_separator_color) root.style.setProperty('--tg-theme-section-separator-color', p.section_separator_color);
+
+      const colorScheme = tg.colorScheme || (isDark(p.bg_color) ? 'dark' : 'light');
+      root.setAttribute('data-theme', colorScheme);
+    } else {
+      // Browser fallback theme detection
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const savedTheme = localStorage.getItem('calctg_theme') || (prefersDark ? 'dark' : 'light');
+      root.setAttribute('data-theme', savedTheme);
+    }
+  }
+
+  function isDark(hex) {
+    if (!hex) return false;
+    const c = hex.replace('#', '');
+    if (c.length !== 6) return false;
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.5;
+  }
+
+  function toggleBrowserTheme() {
+    const root = document.documentElement;
+    const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('calctg_theme', next);
+    return next;
+  }
+
+  /**
+   * Handle safe area and viewport
+   */
+  function handleViewportChange() {
+    const root = document.documentElement;
+    if (tg) {
+      if (tg.viewportHeight) {
+        root.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
+      }
+      if (tg.safeAreaInset) {
+        root.style.setProperty('--tg-safe-area-inset-top', `${tg.safeAreaInset.top}px`);
+        root.style.setProperty('--tg-safe-area-inset-bottom', `${tg.safeAreaInset.bottom}px`);
+        root.style.setProperty('--tg-safe-area-inset-left', `${tg.safeAreaInset.left}px`);
+        root.style.setProperty('--tg-safe-area-inset-right', `${tg.safeAreaInset.right}px`);
+      }
+      if (tg.contentSafeAreaInset) {
+        root.style.setProperty('--tg-content-safe-area-inset-top', `${tg.contentSafeAreaInset.top}px`);
+        root.style.setProperty('--tg-content-safe-area-inset-bottom', `${tg.contentSafeAreaInset.bottom}px`);
+      }
+    }
+  }
+
+  function handleThemeChange() {
+    applyTheme();
+  }
+
+  /**
+   * Main Button management (TG native + Browser DOM fallback)
+   */
+  function setMainButton({ text, onClick, isVisible = true, isActive = true }) {
+    // 1. Native Telegram MainButton
+    if (tg && tg.MainButton) {
+      if (currentMainButtonClick) {
+        try {
+          tg.MainButton.offClick(currentMainButtonClick);
+        } catch (e) {}
+      }
+
+      currentMainButtonClick = onClick;
+
+      if (text) tg.MainButton.setText(text);
+      if (isActive) {
+        tg.MainButton.enable();
+      } else {
+        tg.MainButton.disable();
+      }
+
+      if (isVisible) {
+        tg.MainButton.show();
+        if (onClick) {
+          tg.MainButton.onClick(onClick);
+        }
+      } else {
+        tg.MainButton.hide();
+      }
+    }
+
+    // 2. Browser DOM Fallback button
+    const browserBar = document.getElementById('browserBottomBar');
+    const browserBtn = document.getElementById('browserMainBtn');
+    if (browserBar && browserBtn) {
+      // If we are strictly in Telegram with native MainButton active, we hide the browser fallback bar
+      // to avoid visual duplication. If in browser, we display the fallback bar.
+      if (isInsideTelegram) {
+        browserBar.style.display = 'none';
+      } else {
+        if (isVisible) {
+          browserBar.style.display = 'block';
+          browserBtn.textContent = text;
+          browserBtn.disabled = !isActive;
+          browserBtn.onclick = () => {
+            haptic('impact', 'medium');
+            if (onClick) onClick();
+          };
+        } else {
+          browserBar.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  function hideMainButton() {
+    if (tg && tg.MainButton) {
+      if (currentMainButtonClick) {
+        try {
+          tg.MainButton.offClick(currentMainButtonClick);
+        } catch (e) {}
+        currentMainButtonClick = null;
+      }
+      tg.MainButton.hide();
+    }
+    const browserBar = document.getElementById('browserBottomBar');
+    if (browserBar) {
+      browserBar.style.display = 'none';
+    }
+  }
+
+  /**
+   * Back Button management
+   */
+  function setBackButton({ onClick, isVisible = true }) {
+    if (tg && tg.BackButton) {
+      if (currentBackButtonClick) {
+        try {
+          tg.BackButton.offClick(currentBackButtonClick);
+        } catch (e) {}
+      }
+
+      currentBackButtonClick = onClick;
+
+      if (isVisible) {
+        tg.BackButton.show();
+        if (onClick) {
+          tg.BackButton.onClick(onClick);
+        }
+      } else {
+        tg.BackButton.hide();
+      }
+    }
+
+    // Browser in-page back button
+    const pageBackBtn = document.getElementById('pageBackBtn');
+    if (pageBackBtn) {
+      pageBackBtn.style.display = isVisible ? 'inline-flex' : 'none';
+      if (isVisible && onClick) {
+        pageBackBtn.onclick = () => {
+          haptic('impact', 'light');
+          onClick();
+        };
+      }
+    }
+  }
+
+  function hideBackButton() {
+    setBackButton({ isVisible: false });
+  }
+
+  /**
+   * Haptic feedback helper
+   */
+  function haptic(type = 'impact', style = 'light') {
+    if (!tg || !tg.HapticFeedback) return;
+    try {
+      if (type === 'impact') {
+        tg.HapticFeedback.impactOccurred(style); // 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
+      } else if (type === 'notification') {
+        tg.HapticFeedback.notificationOccurred(style); // 'error' | 'success' | 'warning'
+      } else if (type === 'selection') {
+        tg.HapticFeedback.selectionChanged();
+      }
+    } catch (e) {}
+  }
+
+  /**
+   * Close WebApp
+   */
+  function close() {
+    if (tg && typeof tg.close === 'function') {
+      try {
+        tg.close();
+      } catch (e) {}
+    }
+  }
+
+  /**
+   * Send data back to Telegram bot (if launched from keyboard button)
+   */
+  function sendData(data) {
+    if (tg && typeof tg.sendData === 'function') {
+      try {
+        tg.sendData(typeof data === 'string' ? data : JSON.stringify(data));
+      } catch (e) {
+        console.warn('sendData error:', e);
+      }
+    }
+  }
+
+  /**
+   * Get user data from Telegram if available
+   */
+  function getUser() {
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      return tg.initDataUnsafe.user;
+    }
+    return null;
+  }
+
+  return {
+    tg,
+    isInsideTelegram,
+    init,
+    applyTheme,
+    toggleBrowserTheme,
+    setMainButton,
+    hideMainButton,
+    setBackButton,
+    hideBackButton,
+    haptic,
+    close,
+    sendData,
+    getUser
+  };
+})();
+
+// Export for module/global
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = TelegramAdapter;
+}
