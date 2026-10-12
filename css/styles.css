@@ -322,6 +322,9 @@ body {
   cursor: pointer;
   transition: all var(--transition-fast);
   outline: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .service-card:hover {
@@ -468,6 +471,9 @@ body {
   cursor: pointer;
   transition: all var(--transition-fast);
   outline: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .option-card:hover {

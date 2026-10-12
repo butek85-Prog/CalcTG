@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
-   * Render Services List (Screen 1)
+   * Render Services List once into DOM
    */
   function renderServices() {
     servicesList.innerHTML = '';
@@ -192,9 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const isSelected = service.id === state.selectedServiceId;
       const card = document.createElement('div');
       card.className = `service-card ${isSelected ? 'selected' : ''}`;
+      card.dataset.serviceId = service.id;
       card.setAttribute('role', 'radio');
       card.setAttribute('aria-checked', isSelected ? 'true' : 'false');
-      card.setAttribute('tabindex', '0');
 
       card.innerHTML = `
         <div class="service-header">
@@ -219,30 +219,50 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      const selectHandler = () => {
-        if (state.selectedServiceId !== service.id) {
-          TelegramAdapter.haptic('selection');
-          state.selectedServiceId = service.id;
-          renderServices();
-          renderPercentageOptions(); // update ruble amount for percentages
-          updateCalculation();
-        }
-      };
-
-      card.addEventListener('click', selectHandler);
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          selectHandler();
-        }
-      });
-
       servicesList.appendChild(card);
     });
   }
 
   /**
-   * Render Fixed Price Options (Screen 1)
+   * Instantaneous Service Selection (in-place UI update, zero DOM recreation)
+   */
+  function selectService(serviceId) {
+    if (!serviceId || state.selectedServiceId === serviceId) return;
+
+    TelegramAdapter.haptic('selection');
+    state.selectedServiceId = serviceId;
+
+    // 1. Instantly update service cards styles & radios
+    const cards = servicesList.querySelectorAll('.service-card');
+    cards.forEach(card => {
+      const isSelected = card.dataset.serviceId === serviceId;
+      card.classList.toggle('selected', isSelected);
+      card.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+      const radio = card.querySelector('.service-radio');
+      if (radio) radio.classList.toggle('checked', isSelected);
+    });
+
+    // 2. Instantly update percentage option ruble estimates
+    const currentService = SERVICES_DATA.find(s => s.id === serviceId) || SERVICES_DATA[0];
+    const pctCards = percentageOptionsList.querySelectorAll('.option-card');
+    pctCards.forEach(card => {
+      const optId = card.dataset.optionId;
+      const opt = PERCENTAGE_OPTIONS_DATA.find(o => o.id === optId);
+      if (opt) {
+        const calculatedRub = Math.round(currentService.price * (opt.percent / 100));
+        const rubSpan = card.querySelector('.pct-rub');
+        if (rubSpan) {
+          rubSpan.textContent = `(+${formatRubles(calculatedRub)})`;
+        }
+      }
+    });
+
+    // 3. Immediately recalculate cost & update all totals and buttons
+    updateCalculation();
+  }
+
+  /**
+   * Render Fixed Price Options once into DOM
    */
   function renderFixedOptions() {
     fixedOptionsList.innerHTML = '';
@@ -251,9 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const isChecked = state.selectedOptions.has(option.id);
       const card = document.createElement('div');
       card.className = `option-card ${isChecked ? 'active' : ''}`;
+      card.dataset.optionId = option.id;
       card.setAttribute('role', 'checkbox');
       card.setAttribute('aria-checked', isChecked ? 'true' : 'false');
-      card.setAttribute('tabindex', '0');
 
       card.innerHTML = `
         <div class="option-icon-box">${option.icon}</div>
@@ -269,31 +289,34 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      const toggleHandler = () => {
-        TelegramAdapter.haptic('impact', 'light');
-        if (state.selectedOptions.has(option.id)) {
-          state.selectedOptions.delete(option.id);
-        } else {
-          state.selectedOptions.add(option.id);
-        }
-        renderFixedOptions();
-        updateCalculation();
-      };
-
-      card.addEventListener('click', toggleHandler);
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggleHandler();
-        }
-      });
-
       fixedOptionsList.appendChild(card);
     });
   }
 
+  function toggleFixedOption(optionId) {
+    if (!optionId) return;
+    TelegramAdapter.haptic('impact', 'light');
+
+    if (state.selectedOptions.has(optionId)) {
+      state.selectedOptions.delete(optionId);
+    } else {
+      state.selectedOptions.add(optionId);
+    }
+
+    const card = fixedOptionsList.querySelector(`[data-option-id="${optionId}"]`);
+    if (card) {
+      const isChecked = state.selectedOptions.has(optionId);
+      card.classList.toggle('active', isChecked);
+      card.setAttribute('aria-checked', isChecked ? 'true' : 'false');
+      const sw = card.querySelector('.custom-switch');
+      if (sw) sw.classList.toggle('active', isChecked);
+    }
+
+    updateCalculation();
+  }
+
   /**
-   * Render Percentage Options (Screen 1)
+   * Render Percentage Options once into DOM
    */
   function renderPercentageOptions() {
     percentageOptionsList.innerHTML = '';
@@ -305,9 +328,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const card = document.createElement('div');
       card.className = `option-card ${isChecked ? 'active' : ''}`;
+      card.dataset.optionId = option.id;
       card.setAttribute('role', 'checkbox');
       card.setAttribute('aria-checked', isChecked ? 'true' : 'false');
-      card.setAttribute('tabindex', '0');
 
       card.innerHTML = `
         <div class="option-icon-box">${option.icon}</div>
@@ -326,28 +349,82 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      const toggleHandler = () => {
-        TelegramAdapter.haptic('impact', 'light');
-        if (state.selectedOptions.has(option.id)) {
-          state.selectedOptions.delete(option.id);
-        } else {
-          state.selectedOptions.add(option.id);
-        }
-        renderPercentageOptions();
-        updateCalculation();
-      };
-
-      card.addEventListener('click', toggleHandler);
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggleHandler();
-        }
-      });
-
       percentageOptionsList.appendChild(card);
     });
   }
+
+  function togglePercentageOption(optionId) {
+    if (!optionId) return;
+    TelegramAdapter.haptic('impact', 'light');
+
+    if (state.selectedOptions.has(optionId)) {
+      state.selectedOptions.delete(optionId);
+    } else {
+      state.selectedOptions.add(optionId);
+    }
+
+    const card = percentageOptionsList.querySelector(`[data-option-id="${optionId}"]`);
+    if (card) {
+      const isChecked = state.selectedOptions.has(optionId);
+      card.classList.toggle('active', isChecked);
+      card.setAttribute('aria-checked', isChecked ? 'true' : 'false');
+      const sw = card.querySelector('.custom-switch');
+      if (sw) sw.classList.toggle('active', isChecked);
+    }
+
+    updateCalculation();
+  }
+
+  // Fast Event Delegation for Services (Instant response to clicks and keyboard)
+  servicesList.addEventListener('click', (e) => {
+    const card = e.target.closest('.service-card');
+    if (card && card.dataset.serviceId) {
+      selectService(card.dataset.serviceId);
+    }
+  });
+  servicesList.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const card = e.target.closest('.service-card');
+      if (card && card.dataset.serviceId) {
+        e.preventDefault();
+        selectService(card.dataset.serviceId);
+      }
+    }
+  });
+
+  // Fast Event Delegation for Fixed Options
+  fixedOptionsList.addEventListener('click', (e) => {
+    const card = e.target.closest('.option-card');
+    if (card && card.dataset.optionId) {
+      toggleFixedOption(card.dataset.optionId);
+    }
+  });
+  fixedOptionsList.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const card = e.target.closest('.option-card');
+      if (card && card.dataset.optionId) {
+        e.preventDefault();
+        toggleFixedOption(card.dataset.optionId);
+      }
+    }
+  });
+
+  // Fast Event Delegation for Percentage Options
+  percentageOptionsList.addEventListener('click', (e) => {
+    const card = e.target.closest('.option-card');
+    if (card && card.dataset.optionId) {
+      togglePercentageOption(card.dataset.optionId);
+    }
+  });
+  percentageOptionsList.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const card = e.target.closest('.option-card');
+      if (card && card.dataset.optionId) {
+        e.preventDefault();
+        togglePercentageOption(card.dataset.optionId);
+      }
+    }
+  });
 
   /**
    * Apply Promo Code logic
@@ -718,9 +795,40 @@ document.addEventListener('DOMContentLoaded', () => {
     promoMessage.className = 'promo-message';
     clientCommentInput.value = '';
 
-    renderServices();
-    renderFixedOptions();
-    renderPercentageOptions();
+    // Reset services UI
+    const cards = servicesList.querySelectorAll('.service-card');
+    cards.forEach(card => {
+      const isSelected = card.dataset.serviceId === 'landing';
+      card.classList.toggle('selected', isSelected);
+      card.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+      const radio = card.querySelector('.service-radio');
+      if (radio) radio.classList.toggle('checked', isSelected);
+    });
+
+    // Reset fixed options UI
+    fixedOptionsList.querySelectorAll('.option-card').forEach(card => {
+      card.classList.remove('active');
+      card.setAttribute('aria-checked', 'false');
+      const sw = card.querySelector('.custom-switch');
+      if (sw) sw.classList.remove('active');
+    });
+
+    // Reset percentage options UI and chips
+    const baseService = SERVICES_DATA[0];
+    percentageOptionsList.querySelectorAll('.option-card').forEach(card => {
+      card.classList.remove('active');
+      card.setAttribute('aria-checked', 'false');
+      const sw = card.querySelector('.custom-switch');
+      if (sw) sw.classList.remove('active');
+      const optId = card.dataset.optionId;
+      const opt = PERCENTAGE_OPTIONS_DATA.find(o => o.id === optId);
+      if (opt) {
+        const calculatedRub = Math.round(baseService.price * (opt.percent / 100));
+        const rubSpan = card.querySelector('.pct-rub');
+        if (rubSpan) rubSpan.textContent = `(+${formatRubles(calculatedRub)})`;
+      }
+    });
+
     updateCalculation();
   }
 
