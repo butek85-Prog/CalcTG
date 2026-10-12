@@ -15,8 +15,8 @@ const TelegramAdapter = (() => {
     )
   );
 
-  let currentMainButtonClick = null;
-  let currentBackButtonClick = null;
+  let mainButtonCallback = null;
+  let backButtonCallback = null;
 
   /**
    * Initialize WebApp environment
@@ -31,6 +31,27 @@ const TelegramAdapter = (() => {
         }
       } catch (e) {
         console.warn('Telegram WebApp init warning:', e);
+      }
+
+      // Stable delegates registered ONCE on startup
+      if (tg.MainButton && typeof tg.MainButton.onClick === 'function') {
+        try {
+          tg.MainButton.onClick(() => {
+            if (typeof mainButtonCallback === 'function') {
+              mainButtonCallback();
+            }
+          });
+        } catch (e) {}
+      }
+
+      if (tg.BackButton && typeof tg.BackButton.onClick === 'function') {
+        try {
+          tg.BackButton.onClick(() => {
+            if (typeof backButtonCallback === 'function') {
+              backButtonCallback();
+            }
+          });
+        } catch (e) {}
       }
 
       // Listen for Telegram events
@@ -121,30 +142,26 @@ const TelegramAdapter = (() => {
    * Main Button management (TG native + Browser DOM fallback)
    */
   function setMainButton({ text, onClick, isVisible = true, isActive = true }) {
+    mainButtonCallback = onClick || null;
+
     // 1. Native Telegram MainButton
     if (tg && tg.MainButton) {
-      if (currentMainButtonClick) {
-        try {
-          tg.MainButton.offClick(currentMainButtonClick);
-        } catch (e) {}
-      }
-
-      currentMainButtonClick = onClick;
-
-      if (text) tg.MainButton.setText(text);
-      if (isActive) {
-        tg.MainButton.enable();
-      } else {
-        tg.MainButton.disable();
-      }
-
-      if (isVisible) {
-        tg.MainButton.show();
-        if (onClick) {
-          tg.MainButton.onClick(onClick);
+      try {
+        if (typeof tg.MainButton.setParams === 'function') {
+          tg.MainButton.setParams({
+            text: text || '',
+            is_visible: Boolean(isVisible),
+            is_active: Boolean(isActive)
+          });
+        } else {
+          if (text) tg.MainButton.setText(text);
+          if (isActive) tg.MainButton.enable();
+          else tg.MainButton.disable();
+          if (isVisible) tg.MainButton.show();
+          else tg.MainButton.hide();
         }
-      } else {
-        tg.MainButton.hide();
+      } catch (e) {
+        console.warn('setMainButton error:', e);
       }
     }
 
@@ -152,8 +169,6 @@ const TelegramAdapter = (() => {
     const browserBar = document.getElementById('browserBottomBar');
     const browserBtn = document.getElementById('browserMainBtn');
     if (browserBar && browserBtn) {
-      // If we are strictly in Telegram with native MainButton active, we hide the browser fallback bar
-      // to avoid visual duplication. If in browser, we display the fallback bar.
       if (isInsideTelegram) {
         browserBar.style.display = 'none';
       } else {
@@ -173,14 +188,15 @@ const TelegramAdapter = (() => {
   }
 
   function hideMainButton() {
+    mainButtonCallback = null;
     if (tg && tg.MainButton) {
-      if (currentMainButtonClick) {
-        try {
-          tg.MainButton.offClick(currentMainButtonClick);
-        } catch (e) {}
-        currentMainButtonClick = null;
-      }
-      tg.MainButton.hide();
+      try {
+        if (typeof tg.MainButton.setParams === 'function') {
+          tg.MainButton.setParams({ is_visible: false });
+        } else {
+          tg.MainButton.hide();
+        }
+      } catch (e) {}
     }
     const browserBar = document.getElementById('browserBottomBar');
     if (browserBar) {
@@ -192,23 +208,13 @@ const TelegramAdapter = (() => {
    * Back Button management
    */
   function setBackButton({ onClick, isVisible = true }) {
+    backButtonCallback = onClick || null;
+
     if (tg && tg.BackButton) {
-      if (currentBackButtonClick) {
-        try {
-          tg.BackButton.offClick(currentBackButtonClick);
-        } catch (e) {}
-      }
-
-      currentBackButtonClick = onClick;
-
-      if (isVisible) {
-        tg.BackButton.show();
-        if (onClick) {
-          tg.BackButton.onClick(onClick);
-        }
-      } else {
-        tg.BackButton.hide();
-      }
+      try {
+        if (isVisible) tg.BackButton.show();
+        else tg.BackButton.hide();
+      } catch (e) {}
     }
 
     // Browser in-page back button

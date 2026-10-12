@@ -163,6 +163,24 @@ body {
   font-weight: 400;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-total-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tg-theme-button-color);
+  background-color: var(--color-badge-bg);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
 .theme-toggle-btn {
   background: var(--tg-theme-secondary-bg-color);
   border: 1px solid var(--color-card-border);
@@ -327,8 +345,15 @@ body {
   -webkit-user-select: none;
 }
 
-.service-card:hover {
-  background-color: var(--color-card-hover);
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover {
+    background-color: var(--color-card-hover);
+  }
+}
+
+.service-card:active {
+  transform: scale(0.985);
+  opacity: 0.94;
 }
 
 .service-card.selected {
@@ -476,8 +501,15 @@ body {
   -webkit-user-select: none;
 }
 
-.option-card:hover {
-  background-color: var(--color-card-hover);
+@media (hover: hover) and (pointer: fine) {
+  .option-card:hover {
+    background-color: var(--color-card-hover);
+  }
+}
+
+.option-card:active {
+  transform: scale(0.985);
+  opacity: 0.94;
 }
 
 .option-card.active {
@@ -700,8 +732,14 @@ body {
   border-radius: var(--radius-sm);
 }
 
-.remove-promo-btn:hover {
-  color: var(--color-danger);
+@media (hover: hover) and (pointer: fine) {
+  .remove-promo-btn:hover {
+    color: var(--color-danger);
+  }
+}
+
+.remove-promo-btn:active {
+  opacity: 0.6;
 }
 
 /* ==========================================================================
@@ -803,8 +841,10 @@ body {
   color: var(--tg-theme-button-text-color);
 }
 
-.btn-primary:hover {
-  filter: brightness(1.06);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    filter: brightness(1.06);
+  }
 }
 
 .btn-secondary {
@@ -813,8 +853,10 @@ body {
   border: 1px solid var(--tg-theme-section-separator-color);
 }
 
-.btn-secondary:hover {
-  background-color: var(--color-card-hover);
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover {
+    background-color: var(--color-card-hover);
+  }
 }
 
 .btn-ghost {
@@ -823,8 +865,10 @@ body {
   border: 1px dashed var(--tg-theme-section-separator-color);
 }
 
-.btn-ghost:hover {
-  color: var(--tg-theme-text-color);
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover {
+    color: var(--tg-theme-text-color);
+  }
 }
 
 /* ==========================================================================
@@ -1285,8 +1329,10 @@ body {
   transition: all var(--transition-fast);
 }
 
-.browser-main-button:hover {
-  filter: brightness(1.06);
+@media (hover: hover) and (pointer: fine) {
+  .browser-main-button:hover {
+    filter: brightness(1.06);
+  }
 }
 
 .browser-main-button:active {

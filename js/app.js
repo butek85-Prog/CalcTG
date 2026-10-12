@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const appliedPromoText = document.getElementById('appliedPromoText');
   const removePromoBtn = document.getElementById('removePromoBtn');
 
-  // Summary breakdown elements (Screen 1)
+  // Summary breakdown elements (Screen 1 & Header)
+  const headerTotalBadge = document.getElementById('headerTotalBadge');
   const sumBaseService = document.getElementById('sumBaseService');
   const sumBasePrice = document.getElementById('sumBasePrice');
   const sumFixedRow = document.getElementById('sumFixedRow');
@@ -375,54 +376,111 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCalculation();
   }
 
-  // Fast Event Delegation for Services (Instant response to clicks and keyboard)
-  servicesList.addEventListener('click', (e) => {
-    const card = e.target.closest('.service-card');
-    if (card && card.dataset.serviceId) {
-      selectService(card.dataset.serviceId);
-    }
-  });
-  servicesList.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      const card = e.target.closest('.service-card');
-      if (card && card.dataset.serviceId) {
-        e.preventDefault();
-        selectService(card.dataset.serviceId);
+  /**
+   * Fast Tap binding utility for zero-delay mobile touch and desktop click handling.
+   * Eliminates the 300ms mobile touch delay, prevents hover traps, and debounces synthetic clicks.
+   *
+   * @param {HTMLElement} container
+   * @param {string} selector
+   * @param {function(HTMLElement): void} callback
+   */
+  function bindFastTap(container, selector, callback) {
+    if (!container) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isTrackingTouch = false;
+    let lastFastTapTime = 0;
+
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        isTrackingTouch = true;
       }
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!isTrackingTouch || e.touches.length !== 1) return;
+      const distX = Math.abs(e.touches[0].clientX - touchStartX);
+      const distY = Math.abs(e.touches[0].clientY - touchStartY);
+      // If user moved more than 10px, treat as scroll gesture and cancel tap tracking
+      if (distX > 10 || distY > 10) {
+        isTrackingTouch = false;
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchcancel', () => {
+      isTrackingTouch = false;
+    }, { passive: true });
+
+    container.addEventListener('touchend', (e) => {
+      if (!isTrackingTouch) return;
+      isTrackingTouch = false;
+
+      const duration = Date.now() - touchStartTime;
+      if (duration > 450) return; // Ignore long presses
+
+      const touch = e.changedTouches[0];
+      let target = e.target;
+      if (touch) {
+        const elemAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (elemAtPoint) target = elemAtPoint;
+      }
+
+      const item = target ? target.closest(selector) : null;
+      if (item && container.contains(item)) {
+        lastFastTapTime = Date.now();
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+        callback(item);
+      }
+    }, { passive: false });
+
+    container.addEventListener('click', (e) => {
+      // If a fast-tap was already handled within 450ms, ignore the synthetic click
+      if (Date.now() - lastFastTapTime < 450) {
+        return;
+      }
+      const item = e.target.closest(selector);
+      if (item && container.contains(item)) {
+        callback(item);
+      }
+    });
+
+    // Keyboard accessibility (Enter and Space)
+    container.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const item = e.target.closest(selector);
+        if (item && container.contains(item)) {
+          e.preventDefault();
+          callback(item);
+        }
+      }
+    });
+  }
+
+  // Fast Event Delegation for Services (Instant response to touch, click, keyboard)
+  bindFastTap(servicesList, '.service-card', (card) => {
+    if (card.dataset.serviceId) {
+      selectService(card.dataset.serviceId);
     }
   });
 
   // Fast Event Delegation for Fixed Options
-  fixedOptionsList.addEventListener('click', (e) => {
-    const card = e.target.closest('.option-card');
-    if (card && card.dataset.optionId) {
+  bindFastTap(fixedOptionsList, '.option-card', (card) => {
+    if (card.dataset.optionId) {
       toggleFixedOption(card.dataset.optionId);
-    }
-  });
-  fixedOptionsList.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      const card = e.target.closest('.option-card');
-      if (card && card.dataset.optionId) {
-        e.preventDefault();
-        toggleFixedOption(card.dataset.optionId);
-      }
     }
   });
 
   // Fast Event Delegation for Percentage Options
-  percentageOptionsList.addEventListener('click', (e) => {
-    const card = e.target.closest('.option-card');
-    if (card && card.dataset.optionId) {
+  bindFastTap(percentageOptionsList, '.option-card', (card) => {
+    if (card.dataset.optionId) {
       togglePercentageOption(card.dataset.optionId);
-    }
-  });
-  percentageOptionsList.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      const card = e.target.closest('.option-card');
-      if (card && card.dataset.optionId) {
-        e.preventDefault();
-        togglePercentageOption(card.dataset.optionId);
-      }
     }
   });
 
@@ -496,6 +554,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     sumTotalPrice.textContent = breakdown.formatted.total;
+
+    // Sticky Top Header Total Badge
+    if (headerTotalBadge) {
+      headerTotalBadge.textContent = breakdown.formatted.total;
+    }
 
     if (goToReviewBtn) {
       goToReviewBtn.textContent = `Проверить параметры заказа (${breakdown.formatted.total}) →`;
