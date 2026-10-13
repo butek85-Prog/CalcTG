@@ -4,16 +4,25 @@
  */
 
 const TelegramAdapter = (() => {
-  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  function getTg() {
+    return (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp)
+      ? window.Telegram.WebApp
+      : null;
+  }
+
+  const tg = getTg();
 
   // Telegram environment detection:
   // In real Telegram, initData is present or platform is not 'unknown' and parent != window or webapp headers exist
-  const isInsideTelegram = Boolean(
-    tg && (
-      (tg.initData && tg.initData.length > 0) ||
-      (tg.platform && tg.platform !== 'unknown')
-    )
-  );
+  function isInsideTelegram() {
+    const activeTg = getTg();
+    return Boolean(
+      activeTg && (
+        (activeTg.initData && activeTg.initData.length > 0) ||
+        (activeTg.platform && activeTg.platform !== 'unknown')
+      )
+    );
+  }
 
   let mainButtonCallback = null;
   let backButtonCallback = null;
@@ -143,26 +152,28 @@ const TelegramAdapter = (() => {
    */
   function setMainButton({ text, onClick, isVisible = true, isActive = true }) {
     mainButtonCallback = onClick || null;
+    const btnText = String(text || '');
 
-    // 1. Native Telegram MainButton - Always call setText directly
-    if (tg && tg.MainButton) {
+    // 1. Native Telegram MainButton - Always call setText directly with no caching
+    const activeTg = getTg();
+    if (activeTg && activeTg.MainButton) {
       try {
-        if (text && typeof tg.MainButton.setText === 'function') {
-          tg.MainButton.setText(text);
+        if (btnText && typeof activeTg.MainButton.setText === 'function') {
+          activeTg.MainButton.setText(btnText);
         }
-        if (isVisible && typeof tg.MainButton.show === 'function') {
-          tg.MainButton.show();
-        } else if (!isVisible && typeof tg.MainButton.hide === 'function') {
-          tg.MainButton.hide();
+        if (isVisible && typeof activeTg.MainButton.show === 'function') {
+          activeTg.MainButton.show();
+        } else if (!isVisible && typeof activeTg.MainButton.hide === 'function') {
+          activeTg.MainButton.hide();
         }
-        if (isActive && typeof tg.MainButton.enable === 'function') {
-          tg.MainButton.enable();
-        } else if (!isActive && typeof tg.MainButton.disable === 'function') {
-          tg.MainButton.disable();
+        if (isActive && typeof activeTg.MainButton.enable === 'function') {
+          activeTg.MainButton.enable();
+        } else if (!isActive && typeof activeTg.MainButton.disable === 'function') {
+          activeTg.MainButton.disable();
         }
-        if (typeof tg.MainButton.setParams === 'function') {
-          tg.MainButton.setParams({
-            text: text || '',
+        if (typeof activeTg.MainButton.setParams === 'function') {
+          activeTg.MainButton.setParams({
+            text: btnText,
             is_visible: Boolean(isVisible),
             is_active: Boolean(isActive)
           });
@@ -176,7 +187,7 @@ const TelegramAdapter = (() => {
     const browserBar = document.getElementById('browserBottomBar');
     const browserBtn = document.getElementById('browserMainBtn');
     if (browserBtn) {
-      browserBtn.textContent = text || '';
+      browserBtn.textContent = btnText;
       browserBtn.disabled = !isActive;
       browserBtn.onclick = () => {
         haptic('impact', 'medium');
@@ -184,7 +195,7 @@ const TelegramAdapter = (() => {
       };
     }
     if (browserBar) {
-      if (isInsideTelegram) {
+      if (isInsideTelegram()) {
         browserBar.style.display = 'none';
       } else {
         browserBar.style.display = isVisible ? 'block' : 'none';
@@ -192,14 +203,36 @@ const TelegramAdapter = (() => {
     }
   }
 
+  function updateMainButtonText(text) {
+    const btnText = String(text || '');
+    const activeTg = getTg();
+    if (activeTg && activeTg.MainButton && btnText) {
+      try {
+        if (typeof activeTg.MainButton.setText === 'function') {
+          activeTg.MainButton.setText(btnText);
+        }
+        if (typeof activeTg.MainButton.setParams === 'function') {
+          activeTg.MainButton.setParams({ text: btnText });
+        }
+      } catch (e) {
+        console.warn('updateMainButtonText error:', e);
+      }
+    }
+    const browserBtn = document.getElementById('browserMainBtn');
+    if (browserBtn && btnText) {
+      browserBtn.textContent = btnText;
+    }
+  }
+
   function hideMainButton() {
     mainButtonCallback = null;
-    if (tg && tg.MainButton) {
+    const activeTg = getTg();
+    if (activeTg && activeTg.MainButton) {
       try {
-        if (typeof tg.MainButton.setParams === 'function') {
-          tg.MainButton.setParams({ is_visible: false });
+        if (typeof activeTg.MainButton.setParams === 'function') {
+          activeTg.MainButton.setParams({ is_visible: false });
         } else {
-          tg.MainButton.hide();
+          activeTg.MainButton.hide();
         }
       } catch (e) {}
     }
@@ -290,12 +323,15 @@ const TelegramAdapter = (() => {
   }
 
   return {
-    tg,
+    get tg() {
+      return getTg();
+    },
     isInsideTelegram,
     init,
     applyTheme,
     toggleBrowserTheme,
     setMainButton,
+    updateMainButtonText,
     hideMainButton,
     setBackButton,
     hideBackButton,

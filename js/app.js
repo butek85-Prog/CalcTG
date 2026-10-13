@@ -250,21 +250,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     TelegramAdapter.haptic('selection');
 
-    // 1. Strictly update state FIRST
+    // 1. Сначала перезапиши выбранный ID в state
     state.selectedServiceId = serviceId;
 
-    // 2. Compute fresh breakdown immediately with new state
-    const newBreakdown = calculateCost({
+    // 2. Сразу вызови перерасчет: freshBreakdown = calculateCost(...)
+    const freshBreakdown = calculateCost({
       selectedServiceId: state.selectedServiceId,
       selectedOptions: state.selectedOptions,
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Immediately update bottom button and header badge synchronously
-    syncMainButton(newBreakdown);
-    updateCalculation(newBreakdown);
+    // 3. Явно передай его в адаптер: syncMainButton(freshBreakdown)
+    syncMainButton(freshBreakdown);
 
-    // 4. Instantly update service cards styles & radios
+    // 4. Если используется window.Telegram?.WebApp?.MainButton, вызови обновление нативной кнопки Telegram принудительно сразу после клика с новым значением freshBreakdown.formatted.total
+    const nativeTg = window.Telegram?.WebApp;
+    if (nativeTg?.MainButton) {
+      const nativeBtnText = `Перейти к проверке • ${freshBreakdown.formatted.total}`;
+      try {
+        if (typeof nativeTg.MainButton.setText === 'function') {
+          nativeTg.MainButton.setText(nativeBtnText);
+        }
+        if (typeof nativeTg.MainButton.show === 'function') {
+          nativeTg.MainButton.show();
+        }
+        if (typeof nativeTg.MainButton.enable === 'function') {
+          nativeTg.MainButton.enable();
+        }
+        if (typeof nativeTg.MainButton.setParams === 'function') {
+          nativeTg.MainButton.setParams({
+            text: nativeBtnText,
+            is_visible: true,
+            is_active: true
+          });
+        }
+      } catch (e) {
+        console.warn('Forced MainButton update on service select error:', e);
+      }
+    }
+
+    // 5. Синхронно обновить расчеты и шапку
+    updateCalculation(freshBreakdown);
+
+    // 6. Instantly update service cards styles & radios
     const cards = servicesList.querySelectorAll('.service-card');
     cards.forEach(card => {
       const isSelected = card.dataset.serviceId === serviceId;
@@ -274,8 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (radio) radio.classList.toggle('checked', isSelected);
     });
 
-    // 5. Instantly update percentage option ruble estimates
-    const currentService = newBreakdown.service;
+    // 7. Instantly update percentage option ruble estimates
+    const currentService = freshBreakdown.service;
     const pctCards = percentageOptionsList.querySelectorAll('.option-card');
     pctCards.forEach(card => {
       const optId = card.dataset.optionId;
@@ -342,9 +370,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Immediately update bottom button and calculation
     syncMainButton(newBreakdown);
+
+    // 4. Force native Telegram MainButton update
+    const nativeTg = window.Telegram?.WebApp;
+    if (nativeTg?.MainButton && state.currentScreen === 'calc') {
+      const nativeBtnText = `Перейти к проверке • ${newBreakdown.formatted.total}`;
+      try {
+        if (typeof nativeTg.MainButton.setText === 'function') {
+          nativeTg.MainButton.setText(nativeBtnText);
+        }
+        if (typeof nativeTg.MainButton.setParams === 'function') {
+          nativeTg.MainButton.setParams({
+            text: nativeBtnText,
+            is_visible: true,
+            is_active: true
+          });
+        }
+      } catch (e) {}
+    }
+
     updateCalculation(newBreakdown);
 
-    // 4. Update DOM card & switch
+    // 5. Update DOM card & switch
     const card = fixedOptionsList.querySelector(`[data-option-id="${optionId}"]`);
     if (card) {
       const isChecked = state.selectedOptions.has(optionId);
@@ -413,6 +460,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Immediately update bottom button and calculation
     syncMainButton(newBreakdown);
+
+    // 4. Force native Telegram MainButton update
+    const nativeTgPct = window.Telegram?.WebApp;
+    if (nativeTgPct?.MainButton && state.currentScreen === 'calc') {
+      const nativeBtnText = `Перейти к проверке • ${newBreakdown.formatted.total}`;
+      try {
+        if (typeof nativeTgPct.MainButton.setText === 'function') {
+          nativeTgPct.MainButton.setText(nativeBtnText);
+        }
+        if (typeof nativeTgPct.MainButton.setParams === 'function') {
+          nativeTgPct.MainButton.setParams({
+            text: nativeBtnText,
+            is_visible: true,
+            is_active: true
+          });
+        }
+      } catch (e) {}
+    }
+
     updateCalculation(newBreakdown);
 
     // 4. Update DOM card & switch
@@ -599,6 +665,31 @@ document.addEventListener('DOMContentLoaded', () => {
         isVisible: true,
         isActive: true
       });
+
+      // Принудительное прямое обновление нативной кнопки Telegram WebApp
+      const nativeTg = window.Telegram?.WebApp;
+      if (nativeTg?.MainButton) {
+        try {
+          if (typeof nativeTg.MainButton.setText === 'function') {
+            nativeTg.MainButton.setText(buttonText);
+          }
+          if (typeof nativeTg.MainButton.show === 'function') {
+            nativeTg.MainButton.show();
+          }
+          if (typeof nativeTg.MainButton.enable === 'function') {
+            nativeTg.MainButton.enable();
+          }
+          if (typeof nativeTg.MainButton.setParams === 'function') {
+            nativeTg.MainButton.setParams({
+              text: buttonText,
+              is_visible: true,
+              is_active: true
+            });
+          }
+        } catch (e) {
+          console.warn('Native MainButton direct sync error:', e);
+        }
+      }
     } else if (state.currentScreen === 'review') {
       TelegramAdapter.setMainButton({
         text: `Подтвердить заказ • ${totalText}`,

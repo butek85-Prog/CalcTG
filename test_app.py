@@ -178,7 +178,9 @@ class TestAppFilesAndMarkup(unittest.TestCase):
 
     # Verify selectService updates state before calculation and passes fresh breakdown
     self.assertIn('state.selectedServiceId = serviceId;', app_code)
-    self.assertIn('updateCalculation(newBreakdown);', app_code)
+    self.assertIn('syncMainButton(freshBreakdown);', app_code)
+    self.assertIn('updateCalculation(freshBreakdown);', app_code)
+    self.assertIn('nativeTg.MainButton.setText', app_code)
 
     # Verify toggleFixedOption updates state before calculation and passes fresh breakdown
     self.assertIn('state.selectedOptions.add(optionId);', app_code)
@@ -197,9 +199,9 @@ class TestAppFilesAndMarkup(unittest.TestCase):
       adapter_code = f.read()
 
     # Verify setText is unconditionally called on Telegram.WebApp.MainButton
-    self.assertIn('tg.MainButton.setText(text)', adapter_code)
+    self.assertIn('activeTg.MainButton.setText(btnText)', adapter_code)
     # Verify browserBtn.textContent is unconditionally updated
-    self.assertIn('browserBtn.textContent = text', adapter_code)
+    self.assertIn('browserBtn.textContent = btnText', adapter_code)
 
 if __name__ == '__main__':
   unittest.main()
