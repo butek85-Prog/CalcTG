@@ -188,9 +188,7 @@ class TestAppFilesAndMarkup(unittest.TestCase):
     self.assertIn('headerTotalBadge.textContent = breakdown.formatted.total', app_code)
     self.assertIn('syncMainButton(breakdown);', app_code)
 
-    # Verify syncMainButton consumes fresh breakdown and sets identical text across all buttons
-    self.assertIn('function syncMainButton(breakdown)', app_code)
-    self.assertIn('Перейти к проверке • ${totalText}', app_code)
+    self.assertIn("const buttonText = 'Перейти к проверке'", app_code)
 
     # Verify duplicate HTML button is hidden when inside Telegram
     self.assertIn('function updateTelegramModeUI', app_code)

@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Screen 1 Inline Action Button
     if (goToReviewBtn) {
-      goToReviewBtn.textContent = `Перейти к проверке • ${breakdown.formatted.total}`;
+      goToReviewBtn.textContent = 'Перейти к проверке';
     }
 
     // 4. Update Telegram MainButton & Browser Button synchronously
@@ -616,8 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    const totalText = activeBreakdown.formatted.total;
-    const buttonText = `Перейти к проверке • ${totalText}`;
+    const buttonText = 'Перейти к проверке';
 
     if (state.currentScreen === 'calc') {
       if (goToReviewBtn) {
@@ -643,13 +642,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else if (state.currentScreen === 'review') {
       TelegramAdapter.setMainButton({
-        text: `Подтвердить заказ • ${totalText}`,
+        text: 'Подтвердить заказ',
         onClick: () => {
           handleConfirmOrder();
         },
         isVisible: true,
         isActive: true
       });
+      const nativeTg = window.Telegram?.WebApp;
+      if (nativeTg?.MainButton && typeof nativeTg.MainButton.setText === 'function') {
+        try {
+          nativeTg.MainButton.setText('Подтвердить заказ');
+        } catch (e) {}
+      }
     } else if (state.currentScreen === 'success') {
       TelegramAdapter.setMainButton({
         text: 'Новый расчёт',
