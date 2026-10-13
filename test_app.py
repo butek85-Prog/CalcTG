@@ -188,9 +188,18 @@ class TestAppFilesAndMarkup(unittest.TestCase):
     self.assertIn('headerTotalBadge.textContent = breakdown.formatted.total', app_code)
     self.assertIn('syncMainButton(breakdown);', app_code)
 
-    # Verify syncMainButton consumes fresh breakdown
+    # Verify syncMainButton consumes fresh breakdown and sets identical text across all buttons
     self.assertIn('function syncMainButton(breakdown)', app_code)
     self.assertIn('Перейти к проверке • ${totalText}', app_code)
+
+  def test_tg_adapter_always_calls_set_text_and_updates_browser_btn(self):
+    with open(os.path.join(self.root, 'js', 'tg-adapter.js'), 'r', encoding='utf-8') as f:
+      adapter_code = f.read()
+
+    # Verify setText is unconditionally called on Telegram.WebApp.MainButton
+    self.assertIn('tg.MainButton.setText(text)', adapter_code)
+    # Verify browserBtn.textContent is unconditionally updated
+    self.assertIn('browserBtn.textContent = text', adapter_code)
 
 if __name__ == '__main__':
   unittest.main()

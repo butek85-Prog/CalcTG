@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedOptions: state.selectedOptions,
       promoCode: null
     });
+    syncMainButton(newBreakdown);
     updateCalculation(newBreakdown);
   });
 
@@ -259,7 +260,11 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Instantly update service cards styles & radios
+    // 3. Immediately update bottom button and header badge synchronously
+    syncMainButton(newBreakdown);
+    updateCalculation(newBreakdown);
+
+    // 4. Instantly update service cards styles & radios
     const cards = servicesList.querySelectorAll('.service-card');
     cards.forEach(card => {
       const isSelected = card.dataset.serviceId === serviceId;
@@ -269,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (radio) radio.classList.toggle('checked', isSelected);
     });
 
-    // 4. Instantly update percentage option ruble estimates
+    // 5. Instantly update percentage option ruble estimates
     const currentService = newBreakdown.service;
     const pctCards = percentageOptionsList.querySelectorAll('.option-card');
     pctCards.forEach(card => {
@@ -283,9 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
-
-    // 5. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
-    updateCalculation(newBreakdown);
   }
 
   /**
@@ -338,7 +340,11 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Update DOM card & switch
+    // 3. Immediately update bottom button and calculation
+    syncMainButton(newBreakdown);
+    updateCalculation(newBreakdown);
+
+    // 4. Update DOM card & switch
     const card = fixedOptionsList.querySelector(`[data-option-id="${optionId}"]`);
     if (card) {
       const isChecked = state.selectedOptions.has(optionId);
@@ -347,9 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const sw = card.querySelector('.custom-switch');
       if (sw) sw.classList.toggle('active', isChecked);
     }
-
-    // 4. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
-    updateCalculation(newBreakdown);
   }
 
   /**
@@ -408,7 +411,11 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Update DOM card & switch
+    // 3. Immediately update bottom button and calculation
+    syncMainButton(newBreakdown);
+    updateCalculation(newBreakdown);
+
+    // 4. Update DOM card & switch
     const card = percentageOptionsList.querySelector(`[data-option-id="${optionId}"]`);
     if (card) {
       const isChecked = state.selectedOptions.has(optionId);
@@ -417,9 +424,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const sw = card.querySelector('.custom-switch');
       if (sw) sw.classList.toggle('active', isChecked);
     }
-
-    // 4. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
-    updateCalculation(newBreakdown);
   }
 
   /**
@@ -500,7 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
         promoCode: state.promoCode
       });
 
-      // 3. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
+      // 3. Immediately update bottom button and calculation
+      syncMainButton(newBreakdown);
       updateCalculation(newBreakdown);
     } else {
       TelegramAdapter.haptic('notification', 'error');
@@ -559,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Screen 1 Inline Action Button
     if (goToReviewBtn) {
-      goToReviewBtn.textContent = `Перейти к проверке (${breakdown.formatted.total}) →`;
+      goToReviewBtn.textContent = `Перейти к проверке • ${breakdown.formatted.total}`;
     }
 
     // 4. Update Telegram MainButton & Browser Button synchronously
@@ -580,10 +585,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const totalText = activeBreakdown.formatted.total;
+    const buttonText = `Перейти к проверке • ${totalText}`;
 
     if (state.currentScreen === 'calc') {
+      if (goToReviewBtn) {
+        goToReviewBtn.textContent = buttonText;
+      }
       TelegramAdapter.setMainButton({
-        text: `Перейти к проверке • ${totalText}`,
+        text: buttonText,
         onClick: () => {
           showScreen('review');
         },
@@ -655,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedOptions: state.selectedOptions,
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
+    syncMainButton(freshBreakdown);
     updateCalculation(freshBreakdown);
   }
 
@@ -901,6 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedOptions: state.selectedOptions,
       promoCode: null
     });
+    syncMainButton(freshBreakdown);
     updateCalculation(freshBreakdown);
   }
 

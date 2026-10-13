@@ -144,21 +144,28 @@ const TelegramAdapter = (() => {
   function setMainButton({ text, onClick, isVisible = true, isActive = true }) {
     mainButtonCallback = onClick || null;
 
-    // 1. Native Telegram MainButton
+    // 1. Native Telegram MainButton - Always call setText directly
     if (tg && tg.MainButton) {
       try {
+        if (text && typeof tg.MainButton.setText === 'function') {
+          tg.MainButton.setText(text);
+        }
+        if (isVisible && typeof tg.MainButton.show === 'function') {
+          tg.MainButton.show();
+        } else if (!isVisible && typeof tg.MainButton.hide === 'function') {
+          tg.MainButton.hide();
+        }
+        if (isActive && typeof tg.MainButton.enable === 'function') {
+          tg.MainButton.enable();
+        } else if (!isActive && typeof tg.MainButton.disable === 'function') {
+          tg.MainButton.disable();
+        }
         if (typeof tg.MainButton.setParams === 'function') {
           tg.MainButton.setParams({
             text: text || '',
             is_visible: Boolean(isVisible),
             is_active: Boolean(isActive)
           });
-        } else {
-          if (text) tg.MainButton.setText(text);
-          if (isActive) tg.MainButton.enable();
-          else tg.MainButton.disable();
-          if (isVisible) tg.MainButton.show();
-          else tg.MainButton.hide();
         }
       } catch (e) {
         console.warn('setMainButton error:', e);
@@ -168,21 +175,19 @@ const TelegramAdapter = (() => {
     // 2. Browser DOM Fallback button
     const browserBar = document.getElementById('browserBottomBar');
     const browserBtn = document.getElementById('browserMainBtn');
-    if (browserBar && browserBtn) {
+    if (browserBtn) {
+      browserBtn.textContent = text || '';
+      browserBtn.disabled = !isActive;
+      browserBtn.onclick = () => {
+        haptic('impact', 'medium');
+        if (onClick) onClick();
+      };
+    }
+    if (browserBar) {
       if (isInsideTelegram) {
         browserBar.style.display = 'none';
       } else {
-        if (isVisible) {
-          browserBar.style.display = 'block';
-          browserBtn.textContent = text;
-          browserBtn.disabled = !isActive;
-          browserBtn.onclick = () => {
-            haptic('impact', 'medium');
-            if (onClick) onClick();
-          };
-        } else {
-          browserBar.style.display = 'none';
-        }
+        browserBar.style.display = isVisible ? 'block' : 'none';
       }
     }
   }
