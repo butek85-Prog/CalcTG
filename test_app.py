@@ -172,5 +172,25 @@ class TestAppFilesAndMarkup(unittest.TestCase):
     self.assertIn('HapticFeedback', adapter_code, "Adapter must support Telegram HapticFeedback")
     self.assertIn('safeAreaInset', adapter_code, "Adapter must support safeAreaInset")
 
+  def test_app_js_synchronous_state_and_mainbutton_sync(self):
+    with open(os.path.join(self.root, 'js', 'app.js'), 'r', encoding='utf-8') as f:
+      app_code = f.read()
+
+    # Verify selectService updates state before calculation and passes fresh breakdown
+    self.assertIn('state.selectedServiceId = serviceId;', app_code)
+    self.assertIn('updateCalculation(newBreakdown);', app_code)
+
+    # Verify toggleFixedOption updates state before calculation and passes fresh breakdown
+    self.assertIn('state.selectedOptions.add(optionId);', app_code)
+    self.assertIn('state.selectedOptions.delete(optionId);', app_code)
+
+    # Verify updateCalculation updates header badge and passes breakdown to syncMainButton
+    self.assertIn('headerTotalBadge.textContent = breakdown.formatted.total', app_code)
+    self.assertIn('syncMainButton(breakdown);', app_code)
+
+    # Verify syncMainButton consumes fresh breakdown
+    self.assertIn('function syncMainButton(breakdown)', app_code)
+    self.assertIn('Перейти к проверке • ${totalText}', app_code)
+
 if __name__ == '__main__':
   unittest.main()

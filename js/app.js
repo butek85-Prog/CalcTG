@@ -133,7 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
     appliedPromoBadge.style.display = 'none';
     promoMessage.textContent = '';
     promoMessage.className = 'promo-message';
-    updateCalculation();
+
+    const newBreakdown = calculateCost({
+      selectedServiceId: state.selectedServiceId,
+      selectedOptions: state.selectedOptions,
+      promoCode: null
+    });
+    updateCalculation(newBreakdown);
   });
 
   // Navigation button listeners
@@ -242,9 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!serviceId || state.selectedServiceId === serviceId) return;
 
     TelegramAdapter.haptic('selection');
+
+    // 1. Strictly update state FIRST
     state.selectedServiceId = serviceId;
 
-    // 1. Instantly update service cards styles & radios
+    // 2. Compute fresh breakdown immediately with new state
+    const newBreakdown = calculateCost({
+      selectedServiceId: state.selectedServiceId,
+      selectedOptions: state.selectedOptions,
+      promoCode: state.isPromoApplied ? state.promoCode : null
+    });
+
+    // 3. Instantly update service cards styles & radios
     const cards = servicesList.querySelectorAll('.service-card');
     cards.forEach(card => {
       const isSelected = card.dataset.serviceId === serviceId;
@@ -254,8 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (radio) radio.classList.toggle('checked', isSelected);
     });
 
-    // 2. Instantly update percentage option ruble estimates
-    const currentService = SERVICES_DATA.find(s => s.id === serviceId) || SERVICES_DATA[0];
+    // 4. Instantly update percentage option ruble estimates
+    const currentService = newBreakdown.service;
     const pctCards = percentageOptionsList.querySelectorAll('.option-card');
     pctCards.forEach(card => {
       const optId = card.dataset.optionId;
@@ -269,8 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // 3. Immediately recalculate cost & update all totals and buttons
-    updateCalculation();
+    // 5. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
+    updateCalculation(newBreakdown);
   }
 
   /**
@@ -309,12 +324,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!optionId) return;
     TelegramAdapter.haptic('impact', 'light');
 
+    // 1. Strictly update state FIRST
     if (state.selectedOptions.has(optionId)) {
       state.selectedOptions.delete(optionId);
     } else {
       state.selectedOptions.add(optionId);
     }
 
+    // 2. Compute fresh breakdown immediately
+    const newBreakdown = calculateCost({
+      selectedServiceId: state.selectedServiceId,
+      selectedOptions: state.selectedOptions,
+      promoCode: state.isPromoApplied ? state.promoCode : null
+    });
+
+    // 3. Update DOM card & switch
     const card = fixedOptionsList.querySelector(`[data-option-id="${optionId}"]`);
     if (card) {
       const isChecked = state.selectedOptions.has(optionId);
@@ -324,7 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sw) sw.classList.toggle('active', isChecked);
     }
 
-    updateCalculation();
+    // 4. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
+    updateCalculation(newBreakdown);
   }
 
   /**
@@ -369,12 +394,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!optionId) return;
     TelegramAdapter.haptic('impact', 'light');
 
+    // 1. Strictly update state FIRST
     if (state.selectedOptions.has(optionId)) {
       state.selectedOptions.delete(optionId);
     } else {
       state.selectedOptions.add(optionId);
     }
 
+    // 2. Compute fresh breakdown immediately
+    const newBreakdown = calculateCost({
+      selectedServiceId: state.selectedServiceId,
+      selectedOptions: state.selectedOptions,
+      promoCode: state.isPromoApplied ? state.promoCode : null
+    });
+
+    // 3. Update DOM card & switch
     const card = percentageOptionsList.querySelector(`[data-option-id="${optionId}"]`);
     if (card) {
       const isChecked = state.selectedOptions.has(optionId);
@@ -384,56 +418,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sw) sw.classList.toggle('active', isChecked);
     }
 
-    updateCalculation();
+    // 4. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
+    updateCalculation(newBreakdown);
   }
 
   /**
-   * Selection binding utility for zero-delay mobile touch and desktop click handling.
-   * Resolves target element directly from touchstart and isolates debouncing per element.
-   *
-   * @param {HTMLElement} container
-   * @param {string} selector
-   * @param {function(HTMLElement): void} callback
+   * Fast, reliable event delegation for click and keyboard accessibility.
+   * With CSS touch-action: manipulation, mobile click events fire with 0ms delay.
    */
-  function bindSelection(container, selector, callback) {
+  function bindListSelection(container, selector, callback) {
     if (!container) return;
-
-    let touchTarget = null;
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    container.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        touchTarget = e.target.closest(selector);
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-
-    container.addEventListener('touchend', (e) => {
-      if (!touchTarget) return;
-      const target = touchTarget;
-      touchTarget = null;
-
-      const touch = e.changedTouches[0];
-      if (touch) {
-        const dx = Math.abs(touch.clientX - touchStartX);
-        const dy = Math.abs(touch.clientY - touchStartY);
-        // Valid tap: user shifted less than 24px (did not scroll)
-        if (dx < 24 && dy < 24 && container.contains(target)) {
-          target._lastTouchTap = Date.now();
-          callback(target);
-        }
-      }
-    }, { passive: true });
 
     container.addEventListener('click', (e) => {
       const item = e.target.closest(selector);
       if (item && container.contains(item)) {
-        // If this specific element was triggered by touch within 400ms, ignore ghost click
-        if (item._lastTouchTap && Date.now() - item._lastTouchTap < 400) {
-          return;
-        }
         callback(item);
       }
     });
@@ -450,22 +448,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Event Delegation for Services (Instant response to touch, click, keyboard)
-  bindSelection(servicesList, '.service-card', (card) => {
+  // Event Delegation for Services (Instant response to click, touch, keyboard)
+  bindListSelection(servicesList, '.service-card', (card) => {
     if (card.dataset.serviceId) {
       selectService(card.dataset.serviceId);
     }
   });
 
   // Event Delegation for Fixed Options
-  bindSelection(fixedOptionsList, '.option-card', (card) => {
+  bindListSelection(fixedOptionsList, '.option-card', (card) => {
     if (card.dataset.optionId) {
       toggleFixedOption(card.dataset.optionId);
     }
   });
 
   // Event Delegation for Percentage Options
-  bindSelection(percentageOptionsList, '.option-card', (card) => {
+  bindListSelection(percentageOptionsList, '.option-card', (card) => {
     if (card.dataset.optionId) {
       togglePercentageOption(card.dataset.optionId);
     }
@@ -484,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clean = rawVal.toUpperCase();
     if (VALID_PROMOCODES[clean]) {
       TelegramAdapter.haptic('notification', 'success');
+      // 1. Strictly update state FIRST
       state.promoCode = clean;
       state.isPromoApplied = true;
 
@@ -493,7 +492,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       showPromoStatus(`Промокод ${clean} успешно применён! Скидка ${promoInfo.discountPercent}%`, false);
       promoInput.value = '';
-      updateCalculation();
+
+      // 2. Compute fresh breakdown immediately
+      const newBreakdown = calculateCost({
+        selectedServiceId: state.selectedServiceId,
+        selectedOptions: state.selectedOptions,
+        promoCode: state.promoCode
+      });
+
+      // 3. Immediately update calculation, header badge, and syncMainButton with fresh breakdown
+      updateCalculation(newBreakdown);
     } else {
       TelegramAdapter.haptic('notification', 'error');
       showPromoStatus(`Промокод «${rawVal}» не найден или недействителен. Попробуйте START10`, true);
@@ -506,16 +514,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Recalculate cost and update all summary displays
+   * Recalculate cost and synchronously update all summary displays and buttons
+   * @param {Object} [providedBreakdown]
+   * @returns {Object} breakdown
    */
-  function updateCalculation() {
-    const breakdown = calculateCost({
+  function updateCalculation(providedBreakdown) {
+    const breakdown = providedBreakdown || calculateCost({
       selectedServiceId: state.selectedServiceId,
       selectedOptions: state.selectedOptions,
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // Screen 1 Summary Card
+    // 1. Sticky Top Header Total Badge - synchronous immediate update
+    if (headerTotalBadge) {
+      headerTotalBadge.textContent = breakdown.formatted.total;
+    }
+
+    // 2. Screen 1 Summary Card
     sumBaseService.textContent = breakdown.service.shortName;
     sumBasePrice.textContent = breakdown.formatted.basePrice;
 
@@ -542,16 +557,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sumTotalPrice.textContent = breakdown.formatted.total;
 
-    // Sticky Top Header Total Badge
-    if (headerTotalBadge) {
-      headerTotalBadge.textContent = breakdown.formatted.total;
-    }
-
+    // 3. Screen 1 Inline Action Button
     if (goToReviewBtn) {
-      goToReviewBtn.textContent = `Проверить параметры заказа (${breakdown.formatted.total}) →`;
+      goToReviewBtn.textContent = `Перейти к проверке (${breakdown.formatted.total}) →`;
     }
 
-    // Update Telegram MainButton & Browser Button depending on current screen
+    // 4. Update Telegram MainButton & Browser Button synchronously
     syncMainButton(breakdown);
 
     return breakdown;
@@ -559,19 +570,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * Sync MainButton / Browser Bottom Button state
+   * @param {Object} [breakdown]
    */
   function syncMainButton(breakdown) {
-    if (!breakdown) {
-      breakdown = calculateCost({
-        selectedServiceId: state.selectedServiceId,
-        selectedOptions: state.selectedOptions,
-        promoCode: state.isPromoApplied ? state.promoCode : null
-      });
-    }
+    const activeBreakdown = breakdown || calculateCost({
+      selectedServiceId: state.selectedServiceId,
+      selectedOptions: state.selectedOptions,
+      promoCode: state.isPromoApplied ? state.promoCode : null
+    });
+
+    const totalText = activeBreakdown.formatted.total;
 
     if (state.currentScreen === 'calc') {
       TelegramAdapter.setMainButton({
-        text: `Перейти к проверке • ${breakdown.formatted.total}`,
+        text: `Перейти к проверке • ${totalText}`,
         onClick: () => {
           showScreen('review');
         },
@@ -580,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     } else if (state.currentScreen === 'review') {
       TelegramAdapter.setMainButton({
-        text: `Подтвердить заказ • ${breakdown.formatted.total}`,
+        text: `Подтвердить заказ • ${totalText}`,
         onClick: () => {
           handleConfirmOrder();
         },
@@ -637,8 +649,13 @@ document.addEventListener('DOMContentLoaded', () => {
       renderSuccessScreen();
     }
 
-    // Refresh buttons
-    updateCalculation();
+    // Refresh buttons with fresh breakdown
+    const freshBreakdown = calculateCost({
+      selectedServiceId: state.selectedServiceId,
+      selectedOptions: state.selectedOptions,
+      promoCode: state.isPromoApplied ? state.promoCode : null
+    });
+    updateCalculation(freshBreakdown);
   }
 
   /**
@@ -879,7 +896,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    updateCalculation();
+    const freshBreakdown = calculateCost({
+      selectedServiceId: state.selectedServiceId,
+      selectedOptions: state.selectedOptions,
+      promoCode: null
+    });
+    updateCalculation(freshBreakdown);
   }
 
   /**
