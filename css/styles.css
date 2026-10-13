@@ -352,8 +352,8 @@ body {
 }
 
 .service-card:active {
-  transform: scale(0.985);
-  opacity: 0.94;
+  background-color: var(--color-card-hover);
+  opacity: 0.92;
 }
 
 .service-card.selected {
@@ -508,8 +508,8 @@ body {
 }
 
 .option-card:active {
-  transform: scale(0.985);
-  opacity: 0.94;
+  background-color: var(--color-card-hover);
+  opacity: 0.92;
 }
 
 .option-card.active {

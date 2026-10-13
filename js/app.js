@@ -93,6 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCalculation();
   showScreen('calc');
 
+  // Reload button listener (forces WebApp cache refresh)
+  const refreshAppBtn = document.getElementById('refreshAppBtn');
+  if (refreshAppBtn) {
+    refreshAppBtn.addEventListener('click', () => {
+      TelegramAdapter.haptic('impact', 'medium');
+      const params = new URLSearchParams(window.location.search);
+      params.set('v', Date.now());
+      window.location.replace(window.location.pathname + '?' + params.toString());
+    });
+  }
+
   // Theme toggle listener
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
@@ -377,75 +388,52 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Fast Tap binding utility for zero-delay mobile touch and desktop click handling.
-   * Eliminates the 300ms mobile touch delay, prevents hover traps, and debounces synthetic clicks.
+   * Selection binding utility for zero-delay mobile touch and desktop click handling.
+   * Resolves target element directly from touchstart and isolates debouncing per element.
    *
    * @param {HTMLElement} container
    * @param {string} selector
    * @param {function(HTMLElement): void} callback
    */
-  function bindFastTap(container, selector, callback) {
+  function bindSelection(container, selector, callback) {
     if (!container) return;
 
+    let touchTarget = null;
     let touchStartX = 0;
     let touchStartY = 0;
-    let touchStartTime = 0;
-    let isTrackingTouch = false;
-    let lastFastTapTime = 0;
 
     container.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
+        touchTarget = e.target.closest(selector);
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-        touchStartTime = Date.now();
-        isTrackingTouch = true;
       }
-    }, { passive: true });
-
-    container.addEventListener('touchmove', (e) => {
-      if (!isTrackingTouch || e.touches.length !== 1) return;
-      const distX = Math.abs(e.touches[0].clientX - touchStartX);
-      const distY = Math.abs(e.touches[0].clientY - touchStartY);
-      // Natural thumb taps on capacitive screens shift by 10-25px; cancel only on real scroll (> 28px)
-      if (distX > 28 || distY > 28) {
-        isTrackingTouch = false;
-      }
-    }, { passive: true });
-
-    container.addEventListener('touchcancel', () => {
-      isTrackingTouch = false;
     }, { passive: true });
 
     container.addEventListener('touchend', (e) => {
-      if (!isTrackingTouch) return;
-      isTrackingTouch = false;
-
-      const duration = Date.now() - touchStartTime;
-      if (duration > 500) return; // Ignore long presses
+      if (!touchTarget) return;
+      const target = touchTarget;
+      touchTarget = null;
 
       const touch = e.changedTouches[0];
-      let target = e.target;
-      if (!target && touch) {
-        target = document.elementFromPoint(touch.clientX, touch.clientY);
-      }
-
-      const item = target ? target.closest(selector) : null;
-      if (item && container.contains(item)) {
-        lastFastTapTime = Date.now();
-        if (e.cancelable) {
-          e.preventDefault();
+      if (touch) {
+        const dx = Math.abs(touch.clientX - touchStartX);
+        const dy = Math.abs(touch.clientY - touchStartY);
+        // Valid tap: user shifted less than 24px (did not scroll)
+        if (dx < 24 && dy < 24 && container.contains(target)) {
+          target._lastTouchTap = Date.now();
+          callback(target);
         }
-        callback(item);
       }
-    }, { passive: false });
+    }, { passive: true });
 
     container.addEventListener('click', (e) => {
-      // If a fast-tap was already handled within 500ms, ignore synthetic click
-      if (Date.now() - lastFastTapTime < 500) {
-        return;
-      }
       const item = e.target.closest(selector);
       if (item && container.contains(item)) {
+        // If this specific element was triggered by touch within 400ms, ignore ghost click
+        if (item._lastTouchTap && Date.now() - item._lastTouchTap < 400) {
+          return;
+        }
         callback(item);
       }
     });
@@ -462,22 +450,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Fast Event Delegation for Services (Instant response to touch, click, keyboard)
-  bindFastTap(servicesList, '.service-card', (card) => {
+  // Event Delegation for Services (Instant response to touch, click, keyboard)
+  bindSelection(servicesList, '.service-card', (card) => {
     if (card.dataset.serviceId) {
       selectService(card.dataset.serviceId);
     }
   });
 
-  // Fast Event Delegation for Fixed Options
-  bindFastTap(fixedOptionsList, '.option-card', (card) => {
+  // Event Delegation for Fixed Options
+  bindSelection(fixedOptionsList, '.option-card', (card) => {
     if (card.dataset.optionId) {
       toggleFixedOption(card.dataset.optionId);
     }
   });
 
-  // Fast Event Delegation for Percentage Options
-  bindFastTap(percentageOptionsList, '.option-card', (card) => {
+  // Event Delegation for Percentage Options
+  bindSelection(percentageOptionsList, '.option-card', (card) => {
     if (card.dataset.optionId) {
       togglePercentageOption(card.dataset.optionId);
     }

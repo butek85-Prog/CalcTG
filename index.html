@@ -11,6 +11,20 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
+  <!-- Instant Cache-Busting Redirect: Ensures stale Telegram WebViews upgrade to latest build -->
+  <script>
+    (function() {
+      try {
+        const TARGET_VERSION = '20261013-3';
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('v') !== TARGET_VERSION) {
+          url.searchParams.set('v', TARGET_VERSION);
+          window.location.replace(url.href);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -20,7 +34,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="css/styles.css?v=20261013-2">
+  <link rel="stylesheet" href="css/styles.css?v=20261013-3">
 </head>
 <body>
   <div class="app-container">
@@ -40,6 +54,9 @@
       </div>
       <div class="header-right">
         <div id="headerTotalBadge" class="header-total-badge" title="Текущая итоговая стоимость">15 000 ₽</div>
+        <button id="refreshAppBtn" class="theme-toggle-btn" title="Перезагрузить приложение" aria-label="Перезагрузить">
+          🔄
+        </button>
         <button id="themeToggleBtn" class="theme-toggle-btn" title="Переключить тему оформления" aria-label="Переключить тему">
           🌙
         </button>
@@ -299,8 +316,8 @@
   </div>
 
   <!-- Application Logic Scripts -->
-  <script src="js/calculator.js?v=20261013-2"></script>
-  <script src="js/tg-adapter.js?v=20261013-2"></script>
-  <script src="js/app.js?v=20261013-2"></script>
+  <script src="js/calculator.js?v=20261013-3"></script>
+  <script src="js/tg-adapter.js?v=20261013-3"></script>
+  <script src="js/app.js?v=20261013-3"></script>
 </body>
 </html>
