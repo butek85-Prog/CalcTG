@@ -147,18 +147,26 @@ const TelegramAdapter = (() => {
     // 1. Native Telegram MainButton
     if (tg && tg.MainButton) {
       try {
+        if (text) {
+          tg.MainButton.setText(text);
+        }
+        if (isActive) {
+          tg.MainButton.enable();
+        } else {
+          tg.MainButton.disable();
+        }
+        if (isVisible) {
+          tg.MainButton.show();
+        } else {
+          tg.MainButton.hide();
+        }
+
         if (typeof tg.MainButton.setParams === 'function') {
           tg.MainButton.setParams({
             text: text || '',
             is_visible: Boolean(isVisible),
             is_active: Boolean(isActive)
           });
-        } else {
-          if (text) tg.MainButton.setText(text);
-          if (isActive) tg.MainButton.enable();
-          else tg.MainButton.disable();
-          if (isVisible) tg.MainButton.show();
-          else tg.MainButton.hide();
         }
       } catch (e) {
         console.warn('setMainButton error:', e);

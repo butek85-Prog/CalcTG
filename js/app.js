@@ -406,8 +406,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isTrackingTouch || e.touches.length !== 1) return;
       const distX = Math.abs(e.touches[0].clientX - touchStartX);
       const distY = Math.abs(e.touches[0].clientY - touchStartY);
-      // If user moved more than 10px, treat as scroll gesture and cancel tap tracking
-      if (distX > 10 || distY > 10) {
+      // Natural thumb taps on capacitive screens shift by 10-25px; cancel only on real scroll (> 28px)
+      if (distX > 28 || distY > 28) {
         isTrackingTouch = false;
       }
     }, { passive: true });
@@ -421,13 +421,12 @@ document.addEventListener('DOMContentLoaded', () => {
       isTrackingTouch = false;
 
       const duration = Date.now() - touchStartTime;
-      if (duration > 450) return; // Ignore long presses
+      if (duration > 500) return; // Ignore long presses
 
       const touch = e.changedTouches[0];
       let target = e.target;
-      if (touch) {
-        const elemAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (elemAtPoint) target = elemAtPoint;
+      if (!target && touch) {
+        target = document.elementFromPoint(touch.clientX, touch.clientY);
       }
 
       const item = target ? target.closest(selector) : null;
@@ -441,8 +440,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
 
     container.addEventListener('click', (e) => {
-      // If a fast-tap was already handled within 450ms, ignore the synthetic click
-      if (Date.now() - lastFastTapTime < 450) {
+      // If a fast-tap was already handled within 500ms, ignore synthetic click
+      if (Date.now() - lastFastTapTime < 500) {
         return;
       }
       const item = e.target.closest(selector);
