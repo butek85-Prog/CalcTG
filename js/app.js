@@ -279,17 +279,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     TelegramAdapter.haptic('selection');
 
-    // 1. Сначала перезапиши выбранный ID в state
+    // 1. СТРОГО ПЕРВЫМ делом обновляй состояние:
     state.selectedServiceId = serviceId;
 
-    // 2. Сразу вызови перерасчет: freshBreakdown = calculateCost(...)
-    const freshBreakdown = calculateCost({
+    // 2. ТОЛЬКО ПОСЛЕ ЭТОГО вызывай перерасчёт:
+    const breakdown = calculateCost({
       selectedServiceId: state.selectedServiceId,
       selectedOptions: state.selectedOptions,
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
+    const freshBreakdown = breakdown;
 
-    // 3. Instantly update service cards styles & radios
+    // 3. И сразу же передавай полученный breakdown в syncMainButton:
+    syncMainButton(breakdown);
+
+    // 4. Синхронно обновляй верхнюю плашку и блок «Предварительный расчёт»:
+    updateCalculation(freshBreakdown);
+
+    // 5. Instantly update service cards styles & radios
     const cards = servicesList.querySelectorAll('.service-card');
     cards.forEach(card => {
       const isSelected = card.dataset.serviceId === serviceId;
@@ -299,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (radio) radio.classList.toggle('checked', isSelected);
     });
 
-    // 4. Instantly update percentage option ruble estimates
+    // 6. Instantly update percentage option ruble estimates
     const currentService = freshBreakdown.service;
     const pctCards = percentageOptionsList.querySelectorAll('.option-card');
     pctCards.forEach(card => {
@@ -313,9 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
-
-    // 5. Синхронно обновить расчеты («Предварительный расчёт»), шапку и MainButton в самом конце
-    updateCalculation(freshBreakdown);
   }
 
   /**
@@ -368,7 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Immediately update calculation, header badge, and MainButton
+    // 3. Immediately update MainButton and calculation
+    syncMainButton(newBreakdown);
     updateCalculation(newBreakdown);
 
     // 5. Update DOM card & switch
@@ -438,7 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Immediately update calculation, header badge, and MainButton
+    // 3. Immediately update MainButton and calculation
+    syncMainButton(newBreakdown);
     updateCalculation(newBreakdown);
 
     // 4. Update DOM card & switch

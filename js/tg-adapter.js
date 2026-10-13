@@ -150,12 +150,19 @@ const TelegramAdapter = (() => {
   /**
    * Main Button management (TG native + Browser DOM fallback)
    */
-  function setMainButton({ text, onClick, isVisible = true, isActive = true }) {
+  function setMainButton(params) {
+    if (!params) return;
+    const btnText = String(params.text || '');
+    const onClick = params.onClick;
+    const isVisible = params.isVisible !== undefined ? params.isVisible : true;
+    const isActive = params.isActive !== undefined ? params.isActive : true;
+
     mainButtonCallback = onClick || null;
-    const btnText = String(text || '');
 
     // 1. Native Telegram MainButton - Synchronous setText with zero debounces, timers, or queues
-    const activeTg = getTg();
+    const activeTg = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp)
+      ? window.Telegram.WebApp
+      : null;
     if (activeTg && activeTg.MainButton) {
       try {
         if (btnText && typeof activeTg.MainButton.setText === 'function') {
@@ -176,7 +183,7 @@ const TelegramAdapter = (() => {
       }
     }
 
-    // 2. Browser DOM Fallback button
+    // 2. Fixed footer / Browser DOM Fallback buttons
     const browserBar = document.getElementById('browserBottomBar');
     const browserBtn = document.getElementById('browserMainBtn');
     if (browserBtn) {
@@ -186,6 +193,10 @@ const TelegramAdapter = (() => {
         haptic('impact', 'medium');
         if (onClick) onClick();
       };
+    }
+    const goToReviewBtn = document.getElementById('goToReviewBtn');
+    if (goToReviewBtn) {
+      goToReviewBtn.textContent = btnText;
     }
     if (browserBar) {
       if (isInsideTelegram()) {
