@@ -208,7 +208,23 @@ class TestAppFilesAndMarkup(unittest.TestCase):
       css_code = f.read()
 
     self.assertIn('body.inside-telegram .inline-action-wrap', css_code)
+    self.assertIn('body.inside-telegram #confirmOrderBtn', css_code)
     self.assertIn('display: none !important', css_code)
+
+  def test_dark_theme_styles_and_toggle(self):
+    with open(os.path.join(self.root, 'css', 'styles.css'), 'r', encoding='utf-8') as f:
+      css_code = f.read()
+
+    self.assertIn('body.dark-theme', css_code)
+    self.assertIn('#18222d', css_code)
+    self.assertIn('#242f3d', css_code)
+
+    with open(os.path.join(self.root, 'js', 'tg-adapter.js'), 'r', encoding='utf-8') as f:
+      adapter_code = f.read()
+
+    self.assertIn('toggleBrowserTheme', adapter_code)
+    self.assertIn('getEffectiveTheme', adapter_code)
 
 if __name__ == '__main__':
   unittest.main()
+

@@ -73,51 +73,78 @@ const TelegramAdapter = (() => {
   }
 
   /**
-   * Apply Telegram theme or fallback browser theme
+   * Determine initial theme from localStorage, Telegram colorScheme, or system preference
    */
-  function applyTheme() {
-    const root = document.documentElement;
-
-    if (tg && tg.themeParams && Object.keys(tg.themeParams).length > 0) {
-      const p = tg.themeParams;
-      if (p.bg_color) root.style.setProperty('--tg-theme-bg-color', p.bg_color);
-      if (p.secondary_bg_color) root.style.setProperty('--tg-theme-secondary-bg-color', p.secondary_bg_color);
-      if (p.text_color) root.style.setProperty('--tg-theme-text-color', p.text_color);
-      if (p.hint_color) root.style.setProperty('--tg-theme-hint-color', p.hint_color);
-      if (p.link_color) root.style.setProperty('--tg-theme-link-color', p.link_color);
-      if (p.button_color) root.style.setProperty('--tg-theme-button-color', p.button_color);
-      if (p.button_text_color) root.style.setProperty('--tg-theme-button-text-color', p.button_text_color);
-      if (p.header_bg_color) root.style.setProperty('--tg-theme-header-bg-color', p.header_bg_color);
-      if (p.section_bg_color) root.style.setProperty('--tg-theme-section-bg-color', p.section_bg_color);
-      if (p.section_separator_color) root.style.setProperty('--tg-theme-section-separator-color', p.section_separator_color);
-
-      const colorScheme = tg.colorScheme || (isDark(p.bg_color) ? 'dark' : 'light');
-      root.setAttribute('data-theme', colorScheme);
-    } else {
-      // Browser fallback theme detection
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const savedTheme = localStorage.getItem('calctg_theme') || (prefersDark ? 'dark' : 'light');
-      root.setAttribute('data-theme', savedTheme);
+  function getEffectiveTheme() {
+    const saved = localStorage.getItem('calctg_theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    const activeTg = getTg();
+    if (activeTg && activeTg.colorScheme && (activeTg.colorScheme === 'dark' || activeTg.colorScheme === 'light')) {
+      return activeTg.colorScheme;
     }
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return prefersDark ? 'dark' : 'light';
   }
 
-  function isDark(hex) {
-    if (!hex) return false;
-    const c = hex.replace('#', '');
-    if (c.length !== 6) return false;
-    const r = parseInt(c.substring(0, 2), 16);
-    const g = parseInt(c.substring(2, 4), 16);
-    const b = parseInt(c.substring(4, 6), 16);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance < 0.5;
+  /**
+   * Apply Telegram theme or fallback browser theme
+   */
+  function applyTheme(targetTheme) {
+    const root = document.documentElement;
+    const theme = targetTheme || getEffectiveTheme();
+    const isDarkTheme = (theme === 'dark');
+
+    root.setAttribute('data-theme', theme);
+    if (document.body) {
+      document.body.classList.toggle('dark-theme', isDarkTheme);
+      document.body.classList.toggle('dark', isDarkTheme);
+    }
+
+    // Clear inline CSS variables so that stylesheet rules apply cleanly
+    const cssVars = [
+      '--tg-theme-bg-color',
+      '--tg-theme-secondary-bg-color',
+      '--tg-theme-text-color',
+      '--tg-theme-hint-color',
+      '--tg-theme-link-color',
+      '--tg-theme-button-color',
+      '--tg-theme-button-text-color',
+      '--tg-theme-header-bg-color',
+      '--tg-theme-section-bg-color',
+      '--tg-theme-section-separator-color'
+    ];
+    cssVars.forEach(v => root.style.removeProperty(v));
+
+    // Update theme toggle button icon
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+      themeToggleBtn.textContent = isDarkTheme ? '☀️' : '🌙';
+      themeToggleBtn.setAttribute('title', isDarkTheme ? 'Переключить на светлую тему' : 'Переключить на тёмную тему');
+      themeToggleBtn.setAttribute('aria-label', isDarkTheme ? 'Переключить на светлую тему' : 'Переключить на тёмную тему');
+    }
+
+    // Sync native Telegram header/background colors if supported
+    const activeTg = getTg();
+    if (activeTg) {
+      try {
+        if (typeof activeTg.setHeaderColor === 'function') {
+          activeTg.setHeaderColor(isDarkTheme ? '#18222d' : '#ffffff');
+        }
+        if (typeof activeTg.setBackgroundColor === 'function') {
+          activeTg.setBackgroundColor(isDarkTheme ? '#18222d' : '#f3f4f6');
+        }
+      } catch (e) {}
+    }
+
+    return theme;
   }
 
   function toggleBrowserTheme() {
     const root = document.documentElement;
-    const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const current = (root.getAttribute('data-theme') === 'dark' || (document.body && document.body.classList.contains('dark-theme'))) ? 'dark' : 'light';
     const next = current === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
     localStorage.setItem('calctg_theme', next);
+    applyTheme(next);
     return next;
   }
 

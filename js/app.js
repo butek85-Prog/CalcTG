@@ -81,22 +81,22 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     const inlineActionWrap = document.getElementById('inlineActionWrap') || document.querySelector('.inline-action-wrap');
+    const goToReviewBtn = document.getElementById('goToReviewBtn');
+    const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+    const browserBottomBar = document.getElementById('browserBottomBar');
+
     if (isInsideTg) {
       document.body.classList.add('inside-telegram');
-      if (inlineActionWrap) {
-        inlineActionWrap.style.display = 'none';
-      }
-      if (goToReviewBtn) {
-        goToReviewBtn.style.display = 'none';
-      }
+      if (inlineActionWrap) inlineActionWrap.style.display = 'none';
+      if (goToReviewBtn) goToReviewBtn.style.display = 'none';
+      if (confirmOrderBtn) confirmOrderBtn.style.display = 'none';
+      if (browserBottomBar) browserBottomBar.style.display = 'none';
     } else {
       document.body.classList.remove('inside-telegram');
-      if (inlineActionWrap) {
-        inlineActionWrap.style.display = 'block';
-      }
-      if (goToReviewBtn) {
-        goToReviewBtn.style.display = 'block';
-      }
+      if (inlineActionWrap) inlineActionWrap.style.display = 'block';
+      if (goToReviewBtn) goToReviewBtn.style.display = 'block';
+      if (confirmOrderBtn) confirmOrderBtn.style.display = 'block';
+      if (browserBottomBar) browserBottomBar.style.display = 'block';
     }
   }
 
@@ -137,12 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
       TelegramAdapter.haptic('selection');
-      const newTheme = TelegramAdapter.toggleBrowserTheme();
-      themeToggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+      TelegramAdapter.toggleBrowserTheme();
     });
-    // Set initial icon
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    themeToggleBtn.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
   }
 
   // Promo code event listeners
@@ -688,7 +684,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle Back Button & Navigation
     if (screenName === 'calc') {
       TelegramAdapter.hideBackButton();
-      updateTelegramModeUI();
     } else if (screenName === 'review') {
       const handleBackFromReview = () => {
         state.clientInfo.name = clientNameInput.value;
@@ -705,6 +700,8 @@ document.addEventListener('DOMContentLoaded', () => {
       TelegramAdapter.hideBackButton();
       renderSuccessScreen();
     }
+
+    updateTelegramModeUI();
 
     // Refresh buttons with fresh breakdown
     const freshBreakdown = calculateCost({

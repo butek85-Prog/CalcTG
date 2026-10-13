@@ -44,27 +44,124 @@
   --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark Theme overrides when data-theme="dark" or via Telegram params */
-[data-theme="dark"] {
-  --tg-theme-bg-color: #17212b;
-  --tg-theme-secondary-bg-color: #0e1621;
-  --tg-theme-text-color: #f5f5f5;
-  --tg-theme-hint-color: #8a96a3;
+/* ==========================================================================
+   Dark Theme (classes: .dark-theme, body.dark, [data-theme="dark"])
+   ========================================================================== */
+[data-theme="dark"],
+body.dark-theme,
+body.dark,
+.dark-theme {
+  --tg-theme-bg-color: #18222d;
+  --tg-theme-secondary-bg-color: #18222d;
+  --tg-theme-section-bg-color: #242f3d;
+  --tg-theme-header-bg-color: #18222d;
+  --tg-theme-text-color: #ffffff;
+  --tg-theme-hint-color: #94a3b8;
   --tg-theme-link-color: #5288c1;
-  --tg-theme-button-color: #5288c1;
+  --tg-theme-button-color: #2481cc;
   --tg-theme-button-text-color: #ffffff;
-  --tg-theme-header-bg-color: #17212b;
-  --tg-theme-section-bg-color: #1c2733;
-  --tg-theme-section-separator-color: #242f3d;
+  --tg-theme-section-separator-color: #2e3d4f;
   --tg-theme-accent-color: #5288c1;
   --tg-theme-destructive-text-color: #f87171;
 
-  --color-card-border: rgba(255, 255, 255, 0.08);
-  --color-card-hover: rgba(82, 136, 193, 0.08);
-  --color-shadow: rgba(0, 0, 0, 0.25);
-  --color-badge-bg: rgba(82, 136, 193, 0.16);
+  --color-card-border: rgba(255, 255, 255, 0.1);
+  --color-card-hover: rgba(82, 136, 193, 0.12);
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --color-badge-bg: rgba(82, 136, 193, 0.22);
   --color-success-bg: rgba(16, 185, 129, 0.2);
   --color-danger-bg: rgba(239, 68, 68, 0.2);
+}
+
+body.dark-theme,
+body.dark,
+[data-theme="dark"] body {
+  background-color: #18222d !important;
+  color: #ffffff !important;
+}
+
+body.dark-theme .app-container,
+body.dark .app-container,
+[data-theme="dark"] .app-container {
+  background-color: #18222d !important;
+}
+
+body.dark-theme .app-header,
+body.dark .app-header,
+[data-theme="dark"] .app-header {
+  background-color: #18222d !important;
+  border-bottom-color: #2e3d4f !important;
+}
+
+body.dark-theme .service-card,
+body.dark-theme .option-card,
+body.dark-theme .section-group,
+body.dark-theme .summary-card,
+body.dark-theme .receipt-card,
+body.dark-theme .contact-form-card,
+body.dark-theme .success-card,
+body.dark .service-card,
+body.dark .option-card,
+body.dark .section-group,
+body.dark .summary-card,
+body.dark .receipt-card,
+body.dark .contact-form-card,
+body.dark .success-card,
+[data-theme="dark"] .service-card,
+[data-theme="dark"] .option-card,
+[data-theme="dark"] .section-group,
+[data-theme="dark"] .summary-card,
+[data-theme="dark"] .receipt-card,
+[data-theme="dark"] .contact-form-card,
+[data-theme="dark"] .success-card {
+  background-color: #242f3d !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-theme .form-input,
+body.dark-theme .form-textarea,
+body.dark-theme .promo-input,
+body.dark .form-input,
+body.dark .form-textarea,
+body.dark .promo-input,
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-textarea,
+[data-theme="dark"] .promo-input {
+  background-color: #18222d !important;
+  color: #ffffff !important;
+  border-color: #2e3d4f !important;
+}
+
+body.dark-theme .form-input::placeholder,
+body.dark-theme .form-textarea::placeholder,
+body.dark-theme .promo-input::placeholder,
+body.dark .form-input::placeholder,
+body.dark .form-textarea::placeholder,
+body.dark .promo-input::placeholder,
+[data-theme="dark"] .form-input::placeholder,
+[data-theme="dark"] .form-textarea::placeholder,
+[data-theme="dark"] .promo-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+body.dark-theme .main-service-row,
+body.dark .main-service-row,
+[data-theme="dark"] .main-service-row {
+  background-color: #18222d !important;
+}
+
+body.dark-theme .option-price-chip,
+body.dark .option-price-chip,
+[data-theme="dark"] .option-price-chip {
+  background-color: #18222d !important;
+  color: #ffffff !important;
+}
+
+body.dark-theme .theme-toggle-btn,
+body.dark .theme-toggle-btn,
+[data-theme="dark"] .theme-toggle-btn {
+  background-color: #242f3d !important;
+  border-color: #2e3d4f !important;
+  color: #ffffff !important;
 }
 
 /* Base Reset & Typography */
@@ -812,6 +909,7 @@ body {
 body.inside-telegram .inline-action-wrap,
 body.inside-telegram #inlineActionWrap,
 body.inside-telegram #goToReviewBtn,
+body.inside-telegram #confirmOrderBtn,
 body.inside-telegram .browser-bottom-bar,
 body.inside-telegram #browserBottomBar {
   display: none !important;
