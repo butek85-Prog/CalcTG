@@ -178,9 +178,7 @@ class TestAppFilesAndMarkup(unittest.TestCase):
 
     # Verify selectService updates state before calculation and passes fresh breakdown
     self.assertIn('state.selectedServiceId = serviceId;', app_code)
-    self.assertIn('syncMainButton(freshBreakdown);', app_code)
     self.assertIn('updateCalculation(freshBreakdown);', app_code)
-    self.assertIn('nativeTg.MainButton.setText', app_code)
 
     # Verify toggleFixedOption updates state before calculation and passes fresh breakdown
     self.assertIn('state.selectedOptions.add(optionId);', app_code)
@@ -194,6 +192,10 @@ class TestAppFilesAndMarkup(unittest.TestCase):
     self.assertIn('function syncMainButton(breakdown)', app_code)
     self.assertIn('Перейти к проверке • ${totalText}', app_code)
 
+    # Verify duplicate HTML button is hidden when inside Telegram
+    self.assertIn('function updateTelegramModeUI', app_code)
+    self.assertIn('document.body.classList.add(\'inside-telegram\')', app_code)
+
   def test_tg_adapter_always_calls_set_text_and_updates_browser_btn(self):
     with open(os.path.join(self.root, 'js', 'tg-adapter.js'), 'r', encoding='utf-8') as f:
       adapter_code = f.read()
@@ -202,6 +204,13 @@ class TestAppFilesAndMarkup(unittest.TestCase):
     self.assertIn('activeTg.MainButton.setText(btnText)', adapter_code)
     # Verify browserBtn.textContent is unconditionally updated
     self.assertIn('browserBtn.textContent = btnText', adapter_code)
+
+  def test_styles_hide_inline_button_in_telegram(self):
+    with open(os.path.join(self.root, 'css', 'styles.css'), 'r', encoding='utf-8') as f:
+      css_code = f.read()
+
+    self.assertIn('body.inside-telegram .inline-action-wrap', css_code)
+    self.assertIn('display: none !important', css_code)
 
 if __name__ == '__main__':
   unittest.main()

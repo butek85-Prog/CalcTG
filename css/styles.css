@@ -808,6 +808,15 @@ body {
   margin-top: 10px;
 }
 
+/* Hide duplicate inline HTML button when inside Telegram Mini App (native MainButton is shown) */
+body.inside-telegram .inline-action-wrap,
+body.inside-telegram #inlineActionWrap,
+body.inside-telegram #goToReviewBtn,
+body.inside-telegram .browser-bottom-bar,
+body.inside-telegram #browserBottomBar {
+  display: none !important;
+}
+
 /* ==========================================================================
    Buttons
    ========================================================================== */

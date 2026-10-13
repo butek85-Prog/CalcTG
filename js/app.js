@@ -72,6 +72,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   const pageBackBtn = document.getElementById('pageBackBtn');
 
+  // Hide redundant duplicate HTML button when inside Telegram Mini App
+  function updateTelegramModeUI() {
+    const activeTg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    const isInsideTg = Boolean(
+      (typeof TelegramAdapter !== 'undefined' && typeof TelegramAdapter.isInsideTelegram === 'function' && TelegramAdapter.isInsideTelegram()) ||
+      (activeTg && ((activeTg.initData && activeTg.initData.length > 0) || (activeTg.platform && activeTg.platform !== 'unknown')))
+    );
+
+    const inlineActionWrap = document.getElementById('inlineActionWrap') || document.querySelector('.inline-action-wrap');
+    if (isInsideTg) {
+      document.body.classList.add('inside-telegram');
+      if (inlineActionWrap) {
+        inlineActionWrap.style.display = 'none';
+      }
+      if (goToReviewBtn) {
+        goToReviewBtn.style.display = 'none';
+      }
+    } else {
+      document.body.classList.remove('inside-telegram');
+      if (inlineActionWrap) {
+        inlineActionWrap.style.display = 'block';
+      }
+      if (goToReviewBtn) {
+        goToReviewBtn.style.display = 'block';
+      }
+    }
+  }
+
   // Initialize Telegram Adapter
   TelegramAdapter.init();
 
@@ -92,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPercentageOptions();
   updateCalculation();
   showScreen('calc');
+  updateTelegramModeUI();
 
   // Reload button listener (forces WebApp cache refresh)
   const refreshAppBtn = document.getElementById('refreshAppBtn');
@@ -260,39 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Явно передай его в адаптер: syncMainButton(freshBreakdown)
-    syncMainButton(freshBreakdown);
-
-    // 4. Если используется window.Telegram?.WebApp?.MainButton, вызови обновление нативной кнопки Telegram принудительно сразу после клика с новым значением freshBreakdown.formatted.total
-    const nativeTg = window.Telegram?.WebApp;
-    if (nativeTg?.MainButton) {
-      const nativeBtnText = `Перейти к проверке • ${freshBreakdown.formatted.total}`;
-      try {
-        if (typeof nativeTg.MainButton.setText === 'function') {
-          nativeTg.MainButton.setText(nativeBtnText);
-        }
-        if (typeof nativeTg.MainButton.show === 'function') {
-          nativeTg.MainButton.show();
-        }
-        if (typeof nativeTg.MainButton.enable === 'function') {
-          nativeTg.MainButton.enable();
-        }
-        if (typeof nativeTg.MainButton.setParams === 'function') {
-          nativeTg.MainButton.setParams({
-            text: nativeBtnText,
-            is_visible: true,
-            is_active: true
-          });
-        }
-      } catch (e) {
-        console.warn('Forced MainButton update on service select error:', e);
-      }
-    }
-
-    // 5. Синхронно обновить расчеты и шапку
+    // 3. Синхронно обновить расчеты, шапку и MainButton с этим же свежим freshBreakdown
     updateCalculation(freshBreakdown);
 
-    // 6. Instantly update service cards styles & radios
+    // 4. Instantly update service cards styles & radios
     const cards = servicesList.querySelectorAll('.service-card');
     cards.forEach(card => {
       const isSelected = card.dataset.serviceId === serviceId;
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (radio) radio.classList.toggle('checked', isSelected);
     });
 
-    // 7. Instantly update percentage option ruble estimates
+    // 5. Instantly update percentage option ruble estimates
     const currentService = freshBreakdown.service;
     const pctCards = percentageOptionsList.querySelectorAll('.option-card');
     pctCards.forEach(card => {
@@ -368,27 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Immediately update bottom button and calculation
-    syncMainButton(newBreakdown);
-
-    // 4. Force native Telegram MainButton update
-    const nativeTg = window.Telegram?.WebApp;
-    if (nativeTg?.MainButton && state.currentScreen === 'calc') {
-      const nativeBtnText = `Перейти к проверке • ${newBreakdown.formatted.total}`;
-      try {
-        if (typeof nativeTg.MainButton.setText === 'function') {
-          nativeTg.MainButton.setText(nativeBtnText);
-        }
-        if (typeof nativeTg.MainButton.setParams === 'function') {
-          nativeTg.MainButton.setParams({
-            text: nativeBtnText,
-            is_visible: true,
-            is_active: true
-          });
-        }
-      } catch (e) {}
-    }
-
+    // 3. Immediately update calculation, header badge, and MainButton
     updateCalculation(newBreakdown);
 
     // 5. Update DOM card & switch
@@ -458,27 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Immediately update bottom button and calculation
-    syncMainButton(newBreakdown);
-
-    // 4. Force native Telegram MainButton update
-    const nativeTgPct = window.Telegram?.WebApp;
-    if (nativeTgPct?.MainButton && state.currentScreen === 'calc') {
-      const nativeBtnText = `Перейти к проверке • ${newBreakdown.formatted.total}`;
-      try {
-        if (typeof nativeTgPct.MainButton.setText === 'function') {
-          nativeTgPct.MainButton.setText(nativeBtnText);
-        }
-        if (typeof nativeTgPct.MainButton.setParams === 'function') {
-          nativeTgPct.MainButton.setParams({
-            text: nativeBtnText,
-            is_visible: true,
-            is_active: true
-          });
-        }
-      } catch (e) {}
-    }
-
+    // 3. Immediately update calculation, header badge, and MainButton
     updateCalculation(newBreakdown);
 
     // 4. Update DOM card & switch
@@ -732,6 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle Back Button & Navigation
     if (screenName === 'calc') {
       TelegramAdapter.hideBackButton();
+      updateTelegramModeUI();
     } else if (screenName === 'review') {
       const handleBackFromReview = () => {
         state.clientInfo.name = clientNameInput.value;
