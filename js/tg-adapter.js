@@ -154,7 +154,7 @@ const TelegramAdapter = (() => {
     mainButtonCallback = onClick || null;
     const btnText = String(text || '');
 
-    // 1. Native Telegram MainButton - Always call setText directly with no caching
+    // 1. Native Telegram MainButton - Synchronous setText with zero debounces, timers, or queues
     const activeTg = getTg();
     if (activeTg && activeTg.MainButton) {
       try {
@@ -170,13 +170,6 @@ const TelegramAdapter = (() => {
           activeTg.MainButton.enable();
         } else if (!isActive && typeof activeTg.MainButton.disable === 'function') {
           activeTg.MainButton.disable();
-        }
-        if (typeof activeTg.MainButton.setParams === 'function') {
-          activeTg.MainButton.setParams({
-            text: btnText,
-            is_visible: Boolean(isVisible),
-            is_active: Boolean(isActive)
-          });
         }
       } catch (e) {
         console.warn('setMainButton error:', e);

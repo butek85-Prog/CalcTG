@@ -289,10 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
       promoCode: state.isPromoApplied ? state.promoCode : null
     });
 
-    // 3. Синхронно обновить расчеты, шапку и MainButton с этим же свежим freshBreakdown
-    updateCalculation(freshBreakdown);
-
-    // 4. Instantly update service cards styles & radios
+    // 3. Instantly update service cards styles & radios
     const cards = servicesList.querySelectorAll('.service-card');
     cards.forEach(card => {
       const isSelected = card.dataset.serviceId === serviceId;
@@ -302,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (radio) radio.classList.toggle('checked', isSelected);
     });
 
-    // 5. Instantly update percentage option ruble estimates
+    // 4. Instantly update percentage option ruble estimates
     const currentService = freshBreakdown.service;
     const pctCards = percentageOptionsList.querySelectorAll('.option-card');
     pctCards.forEach(card => {
@@ -316,6 +313,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+
+    // 5. Синхронно обновить расчеты («Предварительный расчёт»), шапку и MainButton в самом конце
+    updateCalculation(freshBreakdown);
   }
 
   /**
@@ -626,26 +626,11 @@ document.addEventListener('DOMContentLoaded', () => {
         isActive: true
       });
 
-      // Принудительное прямое обновление нативной кнопки Telegram WebApp
+      // Прямой синхронный вызов setText для нативной кнопки Telegram WebApp
       const nativeTg = window.Telegram?.WebApp;
-      if (nativeTg?.MainButton) {
+      if (nativeTg?.MainButton && typeof nativeTg.MainButton.setText === 'function') {
         try {
-          if (typeof nativeTg.MainButton.setText === 'function') {
-            nativeTg.MainButton.setText(buttonText);
-          }
-          if (typeof nativeTg.MainButton.show === 'function') {
-            nativeTg.MainButton.show();
-          }
-          if (typeof nativeTg.MainButton.enable === 'function') {
-            nativeTg.MainButton.enable();
-          }
-          if (typeof nativeTg.MainButton.setParams === 'function') {
-            nativeTg.MainButton.setParams({
-              text: buttonText,
-              is_visible: true,
-              is_active: true
-            });
-          }
+          nativeTg.MainButton.setText(buttonText);
         } catch (e) {
           console.warn('Native MainButton direct sync error:', e);
         }
